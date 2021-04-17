@@ -7,7 +7,7 @@
 * Sam Azhari
 
 ## Project Summary
-a survey of EV vehicles, charging stations in the State of Florida.
+A survey of EV vehicles, charging stations in the State of Florida.
 * we will be plotting charging stations locations on an interactive map, statewide and it could be zoomed by click down to the County.
 * We will be counting the number of registered EV in the State of Florida, and we'll narrow it down also by County & Model of EV.
 
@@ -15,6 +15,7 @@ a survey of EV vehicles, charging stations in the State of Florida.
 ## Data Sources
 * [Florida Electric Vehicle Registrations](https://www.atlasevhub.com/) - csv file
 * [Charging Station Locations](https://developer.nrel.gov/docs/api-key/) - json api
+* [County Boundaries](https://github.com/johan/world.geo.json/tree/master/countries/USA/FL) - github repo
 
 ## Vision Board
 ![Vision of final page](https://github.com/Project-JCSA/FL_Electric_Vehicles/blob/main/Images/VisionBoard.jpg)
