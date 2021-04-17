@@ -17,7 +17,7 @@ a survey of EV vehicles, charging stations in the State of Florida.
 * [Charging Station Locations](https://developer.nrel.gov/docs/api-key/) - json api
 
 ## Vision Board
-
+![Vision of final page](https://github.com/Project-JCSA/FL_Electric_Vehicles/blob/main/Images/VisionBoard.jpg)
 
 ## Project Plan
 1) Clean registration data in Python and load to a SQLite database
