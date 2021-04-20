@@ -16,7 +16,7 @@ A survey of EV vehicles, charging stations in the State of Florida.
 * [Florida Electric Vehicle Registrations](https://www.atlasevhub.com/) - csv file
 * [Charging Station Locations](https://developer.nrel.gov/docs/api-key/) - json api
 * [County Boundaries](https://github.com/johan/world.geo.json/tree/master/countries/USA/FL) - github repo
-* [Alternate County Boundaries](https://public.opendatasoft.com/explore/dataset/us-county-boundaries/table/?disjunctive.[…]junctive.state_name&sort=stusab&refine.state_name=Florida) - github repo
+* [Alternate County Boundaries](https://public.opendatasoft.com/explore/dataset/us-county-boundaries/table/?disjunctive.[…]junctive.state_name&sort=stusab&refine.state_name=Florida) - GeoJson
 
 ## Vision Board
 ![Vision of final page](https://github.com/Project-JCSA/FL_Electric_Vehicles/blob/main/Images/VisionBoard.jpg)
