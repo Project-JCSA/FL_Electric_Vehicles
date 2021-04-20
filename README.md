@@ -27,5 +27,3 @@ A survey of EV vehicles, charging stations in the State of Florida.
 4) There will also be a Bar Chart (for registration by county) 
 5) A Pie Chart will be also built for market share of variable EV models
 6) We will build a website that will include all our findings and will host it localy (deploy it if needed)
-
-
