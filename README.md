@@ -7,13 +7,14 @@
 * Sam Azhari
 
 ## Project Summary
-A survey of EV vehicles, charging stations in the State of Florida.
-* we will be plotting charging stations locations on an interactive map, statewide and it could be zoomed by click down to the County.
-* We will be counting the number of registered EV in the State of Florida, and we'll narrow it down also by County & Model of EV.
+Our project will look at why electric vehicle registrations have increased over the last 3 years. We are going to review  population, income, demographic, vehicle cost, charging stations access, and environmental data to see if any trends can be seen.  We will plot charging stations locations on a statewide interactive map that will zoom down to county level.  In addition, a bar chart of registrations by county and pie chart to display share of EV models. 
+
+![image](https://user-images.githubusercontent.com/74847091/115482229-2d6f8780-a21c-11eb-9339-ad355290b7bf.png)
+
 
 
 ## Data Sources
-* [Florida Electric Vehicle Registrations](https://www.atlasevhub.com/) - csv file
+* [Florida Electric Vehicle Registrations](https://www.atlasevhub.com/materials/state-ev-registration-data/) - csv file
 * [Charging Station Locations](https://developer.nrel.gov/docs/api-key/) - json api
 * [County Boundaries](https://github.com/johan/world.geo.json/tree/master/countries/USA/FL) - github repo
 * [Alternate County Boundaries](https://public.opendatasoft.com/explore/dataset/us-county-boundaries/table/?disjunctive.[…]junctive.state_name&sort=stusab&refine.state_name=Florida) - GeoJson
