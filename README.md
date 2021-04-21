@@ -14,7 +14,7 @@ Our project will look at why electric vehicle registrations have increased over 
 
 
 ## Data Sources
-* [Florida Electric Vehicle Registrations](https://www.atlasevhub.com/) - csv file
+* [Florida Electric Vehicle Registrations](https://www.atlasevhub.com/materials/state-ev-registration-data/) - csv file
 * [Charging Station Locations](https://developer.nrel.gov/docs/api-key/) - json api
 * [County Boundaries](https://github.com/johan/world.geo.json/tree/master/countries/USA/FL) - github repo
 * [Alternate County Boundaries](https://public.opendatasoft.com/explore/dataset/us-county-boundaries/table/?disjunctive.[…]junctive.state_name&sort=stusab&refine.state_name=Florida) - GeoJson
