@@ -7,9 +7,7 @@
 * Sam Azhari
 
 ## Project Summary
-A survey of EV vehicles, charging stations in the State of Florida.
-* we will be plotting charging stations locations on an interactive map, statewide and it could be zoomed by click down to the County.
-* We will be counting the number of registered EV in the State of Florida, and we'll narrow it down also by County & Model of EV.
+Our project will look at why electric vehicle registrations have increased over the last 3 years. We are going to review  population, income, demographic, vehicle cost, charging stations access, and environmental data to see if any trends can be seen.  We will plot charging stations locations on a statewide interactive map that will zoom down to county level.  In addition, a bar chart of registrations by county and pie chart to display share of EV models. 
 
 
 ## Data Sources
