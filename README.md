@@ -9,6 +9,9 @@
 ## Project Summary
 Our project will look at why electric vehicle registrations have increased over the last 3 years. We are going to review  population, income, demographic, vehicle cost, charging stations access, and environmental data to see if any trends can be seen.  We will plot charging stations locations on a statewide interactive map that will zoom down to county level.  In addition, a bar chart of registrations by county and pie chart to display share of EV models. 
 
+![image](https://user-images.githubusercontent.com/74847091/115482229-2d6f8780-a21c-11eb-9339-ad355290b7bf.png)
+
+
 
 ## Data Sources
 * [Florida Electric Vehicle Registrations](https://www.atlasevhub.com/) - csv file
