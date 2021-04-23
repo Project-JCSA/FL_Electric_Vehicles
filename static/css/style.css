@@ -15,3 +15,11 @@ html {
   height: 100%;
 }
 
+.jumbotron {
+  margin-bottom: 30px;
+  color: inherit;
+  background-color: #f9f9f9;
+  text-align: center;
+  background-position-y: 220%;
+  background-image: url("https://icdn2.digitaltrends.com/image/vw-electric-id-buzz-concept-beach-1500x1000.jpg")
+}
