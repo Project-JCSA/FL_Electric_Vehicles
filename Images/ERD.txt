@@ -1,0 +1,25 @@
+county
+----
+county_ID INT PK
+county TEXT
+
+demographic
+----
+county_ID INT PK FK >- county.county_ID
+year INT PK
+population INT
+income INT
+
+vehicle
+----
+vehicle_ID INT PK
+make TEXT
+model TEXT
+
+registration
+----
+vehicle_ID INT PK FK >- vehicle.vehicle_ID
+county_ID INT PK FK >- county.county_ID
+year INT PK
+report_date DATE
+reg_ct INT
