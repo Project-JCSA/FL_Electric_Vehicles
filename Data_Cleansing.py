@@ -12,17 +12,20 @@ db_path = os.path.abspath('./static/data/sqlite.db')
 # ==== Clean Florida EV Registrations data =====
 try:
     # Read csv file into dataframe
-    evreg_path = "static/data/fl_ev_registrations_public.csv"
+    evreg_path = "./static/data/fl_ev_registrations_public.csv"
     evreg_df = pd.read_csv(evreg_path, encoding="utf-8")
-
-    # Remove unnecessary columns
-    evreg_df = evreg_df[['Registration Valid Date','County','Vehicle Name']]
 
     #Rename columns
     evreg_df = evreg_df.rename(columns={'Registration Valid Date':'report_date'
                             ,'County':'county'
                             ,'Vehicle Name':'vehicle_name'
                             })
+
+    evreg_df = evreg_df.astype({'report_date':'datetime64'})
+    evreg_df['year'] = evreg_df['report_date'].dt.year
+    
+    # Remove unnecessary columns
+    evreg_df = evreg_df[['county','year','report_date','vehicle_name']]
 
     # ----- Seperate Vehicle Make and Model ----- #
     # Create list of unique vehicle makes & models
@@ -43,7 +46,6 @@ try:
         model = vehicle[len(make)+1:]
         # Append to vehicle dataframe
         vehicles_df = vehicles_df.append({'vehicle_name':vehicle,'make':make,'model':model}, ignore_index=True)
-
 
     # ----- Census Data ----- #
     # 2018 Census Population URL
@@ -286,11 +288,11 @@ try:
 
     # Registration Table
     evreg_df2 = evreg_df.merge(clean_vehicles_df,left_on='vehicle_name', right_on='vehicle_name')
-    evreg_df2 = evreg_df2[['vehicle_id','report_date','county']]
+    evreg_df2 = evreg_df2[['vehicle_id','year','report_date','county']]
     evreg_df2 = evreg_df2.merge(clean_county_df,left_on='county', right_on='county')
-    evreg_df2 = evreg_df2[['vehicle_id','county_id','report_date']]
+    evreg_df2 = evreg_df2[['vehicle_id','county_id','year','report_date']]
     evreg_df2['reg_count'] = 1
-    evreg_df3 = evreg_df2.groupby(['vehicle_id','county_id','report_date']).sum()
+    evreg_df3 = evreg_df2.groupby(['vehicle_id','county_id','year','report_date']).sum()
     clean_evreg_df = evreg_df3.reset_index()
 
     # Demographic Table
@@ -336,11 +338,12 @@ try:
     # print(pd.read_sql('''SELECT * FROM demographic''', conn))
     # print(f'SQLite version: {sqlite3.version}')
     print(f'SQLite database created successfully.')
-    
+
 except Error as e:
     print(e)
 finally:
     if conn:
         conn.close()
+
 
 
