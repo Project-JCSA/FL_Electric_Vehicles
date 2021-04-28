@@ -288,7 +288,7 @@ function init(){
         barGroup = changeBar(barGroup, yLinearScale, chosenYAxis, height);
 
         // updates tooltips with new info
-        // circlesGroup = changeToolTip(chosenXAxis, chosenYAxis, circlesGroup);
+        barGroup = changeToolTip(chosenXAxis, chosenYAxis, barGroup);
 
         // changes classes to change bold text
         if (chosenYAxis === "registration") {
