@@ -11,31 +11,32 @@ function init(){
     
         if (err) throw err;
     
-        // // Establish Dropdowns
+        // Establish Dropdowns
     
-        // // Get distinct Years from data
-        // let years = [... new Set(evData.map(d => d.year))];
+        // Get distinct Years from data
+        let years = [... new Set(evData.map(d => d.year))];
     
-        // // Append years to dropdown
-        // years.forEach(year => {
-        //     yearSelect.append("option").attr("value", year).text(year);
-        // })
+        // Append years to dropdown
+        years.forEach(year => {
+            yearSelect.append("option").attr("value", year).text(year);
+        })
     
-        // // Get distinct Counties from data
-        // let counties = [... new Set(evData.map(d => d.county))]
+        // Get distinct Counties from data
+        let counties = [... new Set(evData.map(d => d.county))]
         
-        // // Append counties to dropdown
-        // counties.forEach(county => {
-        //     countySelect.append("option").attr("value", county).text(county);
-        // })
+        // Append counties to dropdown
+        counties.forEach(county => {
+            countySelect.append("option").attr("value", county).text(county);
+        })
     
-        // // Establish Year ID and County ID
-        // let yearID = yearSelect.property("value");
-        // let countyID = countySelect.property("value");
-    
+        // Establish Year ID and County ID
+        let yearID = yearSelect.property("value");
+        let countyID = countySelect.property("value");
+        console.log(yearID)
+        console.log(countyID)
         
-        let yearID = 2018
-        let countyID = "Dade"
+        // yearID = 2018
+        // countyID = "Alachua"
     
         // Filter and Sort Metadata
         let filterData = evData.filter(d => d["year"] === yearID);
@@ -55,24 +56,24 @@ function init(){
     
     
         
-        // console.log(filterData)
+        console.log(filterData)
         console.log(barData)
-        // console.log(pieData)
+        console.log(pieData)
     
-        // Establish Subject ID and Meta ID
-        // Filter and Sort Metadata
-        // let filterMeta = data.metadata.filter(meta => meta["id"] === metaID);
+        
+        yearSelect.on("change", () => yearChanged(yearSelect));
+        countySelect.on("change", () => countyChanged(countySelect));
         
     
         barChart(barData)
         pieChart()
         map()
+
+        
     
-        })
+    });
     
-    }
-    
-    
+};
     
     
     // function to change Y Axis Scale
@@ -88,7 +89,7 @@ function init(){
     
     // function to change Y Axis
     function changeYAxes(newYScale, yAxis) {
-        let leftAxis = d3.axisLeft(newYScale);
+        let leftAxis = d3.axisLeft(newYScale).ticks(10);
       
         yAxis.transition()
           .duration(500)
@@ -97,7 +98,57 @@ function init(){
         return yAxis;
     }
     
+    function changeToolTip(chosenYAxis, barGroup) {
+
+        let ylabel;
     
+        if (chosenYAxis === "registration") {
+            ylabel = "EV Registration";
+        }
+        else if(chosenYAxis === "population") {
+            ylabel = "Population";
+        }
+        else {
+            ylabel = "Income";
+        }
+    
+        let toolTip = d3.tip()
+            .attr("class", "tooltip")
+            .offset([0, -20])
+            .html(function(d) {
+            return (`${d.county}<br>
+                ${ylabel} ${d[chosenYAxis]}`);
+            });
+    
+        circlesGroup.call(toolTip);
+    
+        // Create event listners on the bar for tooltip
+        barGroup.on("mouseover", function(data){
+            toolTip.show(data,this);
+        })
+        .on("mouseout", function(data,index){
+            toolTip.hide(data);
+        })
+        // Create event listners on the text for tooltip  
+        barGroup.selectAll("text").on("mouseover", function(data){
+            toolTip.show(data,this);
+        })
+        .on("mouseout", function(data,index){
+            toolTip.hide(data);
+        })
+    
+        return barGroup;
+    }
+    
+    // function to change circles from Y Axis
+    function changeBar(barGroup, newYScale, chosenYAxis) {
+    
+        barGroup.transition()
+            .duration(500)
+            .attr("y", d => newYScale(d[chosenYAxis]))
+    
+        return barGroup;
+      }
     
     // Function to create barChart
     function barChart(barData){
@@ -105,7 +156,7 @@ function init(){
         // let svgHeight = svgWidth / 3.236;
         // console.log(svgWidth)
     
-        let svgWidth = 800;
+        let svgWidth = 1100;
         let svgHeight = 500;
     
         var margin = {
@@ -131,14 +182,8 @@ function init(){
         let width = svgWidth - margin.left - margin.right;
         let height = svgHeight - margin.top - margin.bottom;
     
-        var barSpacing = 10; // desired space between each bar
-        var scaleY = 10; // 10x scale on rect height
-    
-        // Create a 'barWidth' variable so that the bar chart spans the entire chartWidth.
-        var barWidth = (width - (barSpacing * (barData.length - 1))) / barData.length;
     
         // Initial Paramaters
-        let chosenXAxis = "county";
         let chosenYAxis = "registration";
     
         // set xLinearScale
@@ -217,8 +262,68 @@ function init(){
             .attr("y", -90)
             .attr("value", "income")
             .classed("inactive", true)
-            .text("Median Household Income")
+            .text("Household Income")
     
+
+        // y axis labels event listener
+        YaxisLabels.selectAll("text")
+        .on("click", function(){
+
+        // get value of selection
+        let yvalue = d3.select(this).attr("value");
+        if (yvalue !== chosenYAxis) {
+
+        // replaces chosenYAxis with value
+        chosenYAxis = yvalue;
+
+        // updates Y scale for new data
+        yLinearScale = yScale(barData, chosenYAxis);
+
+        // updates y axis with transition
+        yAxis = changeYAxes(yLinearScale, yAxis);
+
+        // updates circles with new y values
+        // barGroup = changeBar(barGroup, yLinearScale, chosenYAxis);
+
+        // updates tooltips with new info
+        // circlesGroup = changeToolTip(chosenXAxis, chosenYAxis, circlesGroup);
+
+        // changes classes to change bold text
+        if (chosenYAxis === "registration") {
+            registrationLabel
+                .classed("active", true)
+                .classed("inactive", false);
+            populationLabel
+                .classed("active", false)
+                .classed("inactive", true);
+            incomeLabel
+                .classed("active", false)
+                .classed("inactive", true);
+        }
+        else if (chosenYAxis === "population") {
+            registrationLabel
+                .classed("active", false)
+                .classed("inactive", true);
+            populationLabel
+                .classed("active", true)
+                .classed("inactive", false);
+            incomeLabel
+                .classed("active", false)
+                .classed("inactive", true);
+        }
+        else {
+            registrationLabel
+                .classed("active", false)
+                .classed("inactive", true);
+            populationLabel
+                .classed("active", false)
+                .classed("inactive", true);
+            incomeLabel
+                .classed("active", true)
+                .classed("inactive", false);
+            }
+        }
+        });
         
     }
     
@@ -318,5 +423,16 @@ function init(){
     
     }
     
-    
-    init()
+function yearChanged(){
+    let yearID = d3.select("#selYear").property("value");
+    init(yearID)
+}
+
+function countyChanged(){
+    let countyID = d3.select("selCounty").property("value");
+    init(countyID)
+}
+
+
+
+init()
