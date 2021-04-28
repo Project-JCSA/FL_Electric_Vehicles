@@ -8,6 +8,19 @@ import requests
 # Identify database path
 db_path = os.path.abspath('./static/data/sqlite.db')
 
+# Florida counties
+county_ls = ['Alachua','Baker','Bay','Bradford','Brevard','Broward','Calhoun','Charlotte','Citrus','Clay'
+            ,'Collier','Columbia','DeSoto','Dixie','Duval','Escambia','Flagler','Franklin','Gadsden'
+            ,'Gilchrist','Glades','Gulf','Hamilton','Hardee','Hendry','Hernando','Highlands','Hillsborough'
+            ,'Holmes','Indian River','Jackson','Jefferson','Lafayette','Lake','Lee','Leon','Levy','Liberty'
+            ,'Madison','Manatee','Marion','Martin','Miami-Dade','Monroe','Nassau','Okaloosa','Okeechobee'
+            ,'Orange','Osceola','Palm Beach','Pasco','Pinellas','Polk','Putnam','Santa Rosa','Sarasota'
+            ,'Seminole','St. Johns','St. Lucie','Sumter','Suwannee','Taylor','Union','Volusia','Wakulla'
+            ,'Walton','Washington','Unknown']
+county_df = pd.DataFrame(county_ls)
+county_df = county_df.reset_index()
+county_df = county_df.rename(columns={'index':'county_id',0:'county'})
+
 
 # ==== Clean Florida EV Registrations data =====
 try:
@@ -24,8 +37,21 @@ try:
     evreg_df = evreg_df.astype({'report_date':'datetime64'})
     evreg_df['year'] = evreg_df['report_date'].dt.year
     
-    # Remove unnecessary columns
-    evreg_df = evreg_df[['county','year','report_date','vehicle_name']]
+    # Clean county in preperation for merging county_df
+    evreg_df.loc[evreg_df['county']=='Dade', 'county'] = 'Miami-Dade'
+    evreg_df.loc[evreg_df['county']=='Desoto', 'county'] = 'DeSoto'
+    evreg_df.loc[evreg_df['county']=='Gadsen', 'county'] = 'Gadsden'
+    evreg_df.loc[evreg_df['county']=='Other', 'county'] = 'Unknown'
+
+    # Check for unmatched counties
+    for county in evreg_df['county'].unique():
+        if county in county_ls:
+            pass
+        else:
+            print(county)
+
+    evreg_df = evreg_df.merge(county_df,on='county')
+    evreg_df = evreg_df[['county_id','year','report_date','vehicle_name']]
 
     # ----- Seperate Vehicle Make and Model ----- #
     # Create list of unique vehicle makes & models
@@ -47,188 +73,25 @@ try:
         # Append to vehicle dataframe
         vehicles_df = vehicles_df.append({'vehicle_name':vehicle,'make':make,'model':model}, ignore_index=True)
 
-    # ----- Census Data ----- #
-    # 2018 Census Population URL
-    pop_2018_url = "https://api.census.gov/data/2018/pep/population?get=DATE_DESC,POP,GEONAME,STATE&for=county:*"
+    # Reset index to create vehicle_id
+    vehicles_df = vehicles_df.reset_index()
+    vehicles_df = vehicles_df.rename(columns={'index':'vehicle_id'})
 
-    #Request data in json and store variable
-    pop_2018_response = requests.get(pop_2018_url)
-    pop_2018_data = pop_2018_response.json()
+    # Bring vehicle_id into evreg_df
+    evreg_df = evreg_df.merge(vehicles_df,on='vehicle_name')
+    evreg_df = evreg_df[['vehicle_id','county_id','year','report_date']]
+    evreg_df['reg_count'] = 1
+    evreg_df = evreg_df.groupby(['vehicle_id','county_id','year','report_date']).sum()
+    evreg_df = evreg_df.reset_index()
 
-    # Create list to store values for the census data
-    date_desc = []
-    pop = []
-    name = []
-    state = []
-    county = []
+    # Remove unnecessary columns
+    vehicles_df = vehicles_df[['vehicle_id','make','model']]
 
-    # Loop through data and append list
-    for items in pop_2018_data:
-        date_desc.append(items[0])
-        pop.append(items[1])
-        name.append(items[2])
-        state.append(items[3])
-        county.append(items[4])
+except Error as e:
+    print(e)
 
-    # Create dataframe from list
-    pop_2018_df = pd.DataFrame({"year":date_desc, "population":pop, "County & State":name, 
-                            "State ID":state, "County ID":county})
-
-    # Clean up Date Column and Split the County and State
-    pop_2018_df["year"] = pop_2018_df["year"].str[4:8]
-    pop_2018_df["county"] = pop_2018_df["County & State"].str.split(' ').str[0]
-
-    # Grab only Florida Counties and Drop unneccessary Columns
-    fl_2018_pop = pop_2018_df[pop_2018_df["State ID"] == "12"]
-    fl_2018_pop = fl_2018_pop.drop(columns=['County & State', 'State ID', 'County ID'])
-    fl_2018_pop = fl_2018_pop.set_index(['county'])
-
-    # Median Household Income
-    mhi_2018_url = "https://api.census.gov/data/timeseries/poverty/saipe?get=NAME,SAEMHI_LB90,SAEMHI_MOE,SAEMHI_PT&for=county:*&YEAR=2018"
-
-    #Request data in json and store variable
-    mhi_2018_response = requests.get(mhi_2018_url)
-    mhi_2018_data = mhi_2018_response.json()
-
-    # Create list to store values for the census data
-    county = []
-    mhi_90 = [] #Median Household Income Lower Bound for 90% Confidence Interval
-    # mhi_moe = [] #Median Household Income Margin of Error
-    # mhi_est = [] #Median Household Income Estimate
-    year = []
-    state = []
-    countyID = []
-
-    # Loop through data and append list
-    for items in mhi_2018_data:
-        county.append(items[0])
-        mhi_90.append(items[1])
-        # mhi_moe.append(items[2])
-        # mhi_est.append(items[3])
-        year.append(items[4])
-        state.append(items[5])
-        countyID.append(items[6])
-
-    # Create dataframe from list
-    mhi_2018_df = pd.DataFrame({"county":county, "year":year, "income": mhi_90, "State ID":state})
-
-    mhi_2018_df["county"] = mhi_2018_df["county"].str.split(' ').str[0]
-
-    # Grab only Florida Counties and Drop unneccessary Columns
-    fl_2018_mhi = mhi_2018_df[mhi_2018_df["State ID"] == "12"]
-    fl_2018_mhi = fl_2018_mhi.drop(columns=['State ID'])
-    fl_2018_mhi = fl_2018_mhi.set_index(['county'])
-    income_2018 = fl_2018_mhi['income']
-
-    # Combine 2018 Data
-    fl_2018_demo = fl_2018_pop
-    fl_2018_demo['income'] = income_2018
-
-    # 2019 Census Population URL
-    pop_2019_url = "https://api.census.gov/data/2019/pep/population?get=DATE_DESC,POP,NAME,STATE&for=county:*"
-
-    #Request data in json and store variable
-    pop_2019_response = requests.get(pop_2019_url)
-    pop_2019_data = pop_2019_response.json()
-
-    # Create list to store values for the census data
-    date_desc = []
-    pop = []
-    name = []
-    state = []
-    county = []
-
-    # Loop through data and append list
-    for items in pop_2019_data:
-        date_desc.append(items[0])
-        pop.append(items[1])
-        name.append(items[2])
-        state.append(items[3])
-        county.append(items[4])
-
-    # Create dataframe from list
-    pop_2019_df = pd.DataFrame({"year":date_desc, "population":pop, "County & State":name, 
-                            "State ID":state, "County ID":county})
-
-    # Clean up Date Column and Split the County and State
-    pop_2019_df["year"] = pop_2019_df["year"].str[4:8]
-    pop_2019_df["county"] = pop_2019_df["County & State"].str.split(' ').str[0]
-
-    # Grab only Florida Counties and Drop unneccessary Columns
-    fl_2019_pop = pop_2019_df[pop_2019_df["State ID"] == "12"]
-    fl_2019_pop = fl_2019_pop.drop(columns=['County & State', 'State ID', 'County ID'])
-    fl_2019_pop = fl_2019_pop.set_index(['county'])
-    fl_2019_pop = fl_2019_pop.sort_index()
-
-    # Median Household Income
-    mhi_2019_url = "https://api.census.gov/data/timeseries/poverty/saipe?get=NAME,SAEMHI_LB90,SAEMHI_MOE,SAEMHI_PT&for=county:*&YEAR=2019"
-
-    #Request data in json and store variable
-    mhi_2019_response = requests.get(mhi_2019_url)
-    mhi_2019_data = mhi_2019_response.json()
-
-    # Create list to store values for the census data
-    county = []
-    mhi_90 = [] #Median Household Income Lower Bound for 90% Confidence Interval
-    # mhi_moe = [] #Median Household Income Margin of Error
-    # mhi_est = [] #Median Household Income Estimate
-    year = []
-    state = []
-    countyID = []
-
-    # Loop through data and append list
-    for items in mhi_2019_data:
-        county.append(items[0])
-        mhi_90.append(items[1])
-        # mhi_moe.append(items[2])
-        # mhi_est.append(items[3])
-        year.append(items[4])
-        state.append(items[5])
-        countyID.append(items[6])
-
-    # Create dataframe from list
-    mhi_2019_df = pd.DataFrame({"county":county, "year":year, "income": mhi_90, "State ID":state})
-    mhi_2019_df["county"] = mhi_2019_df["county"].str.split(' ').str[0]
-
-    # Grab only Florida Counties and Drop unneccessary Columns
-    fl_2019_mhi = mhi_2019_df[mhi_2019_df["State ID"] == "12"]
-    fl_2019_mhi = fl_2019_mhi.drop(columns=['State ID'])
-    fl_2019_mhi = fl_2019_mhi.set_index(['county'])
-    fl_2019_mhi = fl_2019_mhi.sort_index()
-    income_2019 = fl_2019_mhi['income']
-
-    # Combine 2019 Data
-    fl_2019_demo = fl_2019_pop
-    fl_2019_demo['income'] = income_2019
-
-    # Read in CSV
-    fl_2020_pop = pd.read_excel("static/data/fl_2020_pop_estimates-Revised-v2.xlsx", header=2)
-
-    # Drop all rows with NA
-    fl_2020_pop = fl_2020_pop.dropna()
-
-    # Drop the city rows and keep just county totals
-    fl_2020_pop = fl_2020_pop[fl_2020_pop.Area.str.contains('County')]
-
-    # Create new Couty Column by spliting Area
-    fl_2020_pop["county"] = fl_2020_pop["Area"].str.split(' ').str[0]
-
-    # Drop unnecessary columns, rename Headers, set index to county
-    fl_2020_pop = fl_2020_pop.drop(columns = ['Area','Total Change', 'Census', 'Inmates', 'Inmates.1'])
-    fl_2020_pop = fl_2020_pop.rename(columns = {'Population Estimate':'population'})
-    fl_2020_pop = fl_2020_pop.set_index(['county'])
-
-    # Add year column and reorder columns
-    fl_2020_pop['year'] = "2020"
-    fl_2020_pop = fl_2020_pop[['year', 'population']]
-
-    # Concatenate 2018, 2019, & 2020 data
-    fl_combined_demo = pd.concat([fl_2018_demo, fl_2019_demo,fl_2020_pop])
-    fl_combined_demo = fl_combined_demo.sort_index()
-    fl_combined_demo = fl_combined_demo.reset_index()
-
-
-    # ----- Charging Station Data ----- #
+# ==== Clean Charging Station data =====
+try:
     #path to datafiles
     stat_url =  "static/data/fl_ev_stations.csv"
     stat_df = pd.read_csv(stat_url)
@@ -272,40 +135,216 @@ try:
         
         county_stations_df = county_stations_df.append(df, ignore_index=True)
 
-    county_stations_df['county'] = county_stations_df['county'].map(lambda x: x.rstrip(' County'))
+    county_stations_df['county'] = county_stations_df['county'].map(lambda x: x.replace(' County',''))
 
-
-    # ----- Prepare data frames for SQLite database ----- #
-    # County Table
-    clean_county_df = pd.DataFrame(evreg_df['county'].unique(),columns=['county'])
-    clean_county_df = clean_county_df.reset_index()
-    clean_county_df = clean_county_df.rename(columns={'index':'county_id'})
-
-    # Vehicle Table
-    clean_vehicles_df = vehicles_df.reset_index()
-    clean_vehicles_df = clean_vehicles_df.rename(columns={'index':'vehicle_id'})
-    clean_vehicles_df = clean_vehicles_df[['vehicle_id','make','model','vehicle_name']]
-
-    # Registration Table
-    evreg_df2 = evreg_df.merge(clean_vehicles_df,left_on='vehicle_name', right_on='vehicle_name')
-    evreg_df2 = evreg_df2[['vehicle_id','year','report_date','county']]
-    evreg_df2 = evreg_df2.merge(clean_county_df,left_on='county', right_on='county')
-    evreg_df2 = evreg_df2[['vehicle_id','county_id','year','report_date']]
-    evreg_df2['reg_count'] = 1
-    evreg_df3 = evreg_df2.groupby(['vehicle_id','county_id','year','report_date']).sum()
-    clean_evreg_df = evreg_df3.reset_index()
-
-    # Demographic Table
-    clean_demo_df = fl_combined_demo.merge(clean_county_df, how='left', on='county')
-    clean_demo_df = clean_demo_df.astype({'year': 'int','population':'int','income':'float'})
-    clean_demo_df = clean_demo_df.merge(county_stations_df, on=['county','year'])
-    clean_demo_df = clean_demo_df[['county_id','year','population','income','station_count']]
-
-    clean_vehicles_df = clean_vehicles_df[['vehicle_id','make','model']]
-
+     # Check for unmatched counties
+    for county in county_stations_df['county'].unique():
+        if county in county_ls:
+            pass
+        else:
+            print(county)
+    
 except Error as e:
     print(e)
 
+# ==== Clean Census data =====
+try:
+    # 2018 Census Population URL
+    pop_2018_url = "https://api.census.gov/data/2018/pep/population?get=DATE_DESC,POP,GEONAME,STATE&for=county:*"
+
+    #Request data in json and store variable
+    pop_2018_response = requests.get(pop_2018_url)
+    pop_2018_data = pop_2018_response.json()
+
+    # Create list to store values for the census data
+    date_desc = []
+    pop = []
+    name = []
+    state = []
+    county = []
+
+    # Loop through data and append list
+    for items in pop_2018_data:
+        date_desc.append(items[0])
+        pop.append(items[1])
+        name.append(items[2])
+        state.append(items[3])
+        county.append(items[4])
+
+    # Create dataframe from list
+    pop_2018_df = pd.DataFrame({"year":date_desc, "population":pop, "County & State":name, 
+                            "State ID":state, "County ID":county})
+
+    # Clean up Date Column and Split the County and State
+    pop_2018_df["year"] = pop_2018_df["year"].str[4:8]
+    pop_2018_df['county'] = pop_2018_df['County & State'].map(lambda x: x.replace(' County, Florida',''))
+
+    # Grab only Florida Counties and Drop unneccessary Columns
+    fl_2018_pop = pop_2018_df[pop_2018_df["State ID"] == "12"]
+    fl_2018_pop = fl_2018_pop.drop(columns=['County & State', 'State ID', 'County ID'])
+
+    # Median Household Income
+    mhi_2018_url = "https://api.census.gov/data/timeseries/poverty/saipe?get=NAME,SAEMHI_LB90,SAEMHI_MOE,SAEMHI_PT&for=county:*&YEAR=2018"
+
+    #Request data in json and store variable
+    mhi_2018_response = requests.get(mhi_2018_url)
+    mhi_2018_data = mhi_2018_response.json()
+
+    # Create list to store values for the census data
+    county = []
+    mhi_90 = [] #Median Household Income Lower Bound for 90% Confidence Interval
+    # mhi_moe = [] #Median Household Income Margin of Error
+    # mhi_est = [] #Median Household Income Estimate
+    year = []
+    state = []
+    countyID = []
+
+    # Loop through data and append list
+    for items in mhi_2018_data:
+        county.append(items[0])
+        mhi_90.append(items[1])
+        # mhi_moe.append(items[2])
+        # mhi_est.append(items[3])
+        year.append(items[4])
+        state.append(items[5])
+        countyID.append(items[6])
+
+    # Create dataframe from list
+    mhi_2018_df = pd.DataFrame({"county":county, "year":year, "income": mhi_90, "State ID":state})
+    mhi_2018_df['county'] = mhi_2018_df['county'].map(lambda x: x.replace(' County',''))
+
+    # Grab only Florida Counties and Drop unneccessary Columns
+    fl_2018_mhi = mhi_2018_df[mhi_2018_df["State ID"] == "12"]
+    income_2018 = fl_2018_mhi[['county','income']]
+
+    # Combine 2018 Data
+    fl_2018_demo = fl_2018_pop.merge(income_2018, how='outer',on='county')
+
+    # 2019 Census Population URL
+    pop_2019_url = "https://api.census.gov/data/2019/pep/population?get=DATE_DESC,POP,NAME,STATE&for=county:*"
+
+    #Request data in json and store variable
+    pop_2019_response = requests.get(pop_2019_url)
+    pop_2019_data = pop_2019_response.json()
+
+    # Create list to store values for the census data
+    date_desc = []
+    pop = []
+    name = []
+    state = []
+    county = []
+
+    # Loop through data and append list
+    for items in pop_2019_data:
+        date_desc.append(items[0])
+        pop.append(items[1])
+        name.append(items[2])
+        state.append(items[3])
+        county.append(items[4])
+
+    # Create dataframe from list
+    pop_2019_df = pd.DataFrame({"year":date_desc, "population":pop, "County & State":name, 
+                            "State ID":state, "County ID":county})
+
+    # Clean up Date Column and Split the County and State
+    pop_2019_df["year"] = pop_2019_df["year"].str[4:8]
+    pop_2019_df["county"] = pop_2019_df["County & State"].map(lambda x: x.replace(' County, Florida',''))
+
+    # Grab only Florida Counties and Drop unneccessary Columns
+    fl_2019_pop = pop_2019_df[pop_2019_df["State ID"] == "12"]
+    fl_2019_pop = fl_2019_pop.drop(columns=['County & State', 'State ID', 'County ID'])
+
+    # Median Household Income
+    mhi_2019_url = "https://api.census.gov/data/timeseries/poverty/saipe?get=NAME,SAEMHI_LB90,SAEMHI_MOE,SAEMHI_PT&for=county:*&YEAR=2019"
+
+    #Request data in json and store variable
+    mhi_2019_response = requests.get(mhi_2019_url)
+    mhi_2019_data = mhi_2019_response.json()
+
+    # Create list to store values for the census data
+    county = []
+    mhi_90 = [] #Median Household Income Lower Bound for 90% Confidence Interval
+    # mhi_moe = [] #Median Household Income Margin of Error
+    # mhi_est = [] #Median Household Income Estimate
+    year = []
+    state = []
+    countyID = []
+
+    # Loop through data and append list
+    for items in mhi_2019_data:
+        county.append(items[0])
+        mhi_90.append(items[1])
+        # mhi_moe.append(items[2])
+        # mhi_est.append(items[3])
+        year.append(items[4])
+        state.append(items[5])
+        countyID.append(items[6])
+
+    # Create dataframe from list
+    mhi_2019_df = pd.DataFrame({"county":county, "year":year, "income": mhi_90, "State ID":state})
+    mhi_2019_df["county"] = mhi_2019_df["county"].map(lambda x: x.replace(' County',''))
+
+    # # Grab only Florida Counties and Drop unneccessary Columns
+    fl_2019_mhi = mhi_2019_df[mhi_2019_df["State ID"] == "12"]
+    fl_2019_mhi = fl_2019_mhi.drop(columns=['State ID'])
+    # fl_2019_mhi = fl_2019_mhi.set_index(['county'])
+    # fl_2019_mhi = fl_2019_mhi.sort_index()
+    income_2019 = fl_2019_mhi[['income','county']]
+
+    # # Combine 2019 Data
+    fl_2019_demo = fl_2019_pop.merge(income_2019, how='outer',on='county')
+
+    # Read in CSV
+    fl_2020_pop = pd.read_excel("static/data/fl_2020_pop_estimates-Revised-v2.xlsx", header=2)
+
+    # Drop all rows with NA
+    fl_2020_pop = fl_2020_pop.dropna()
+
+    # Drop the city rows and keep just county totals
+    fl_2020_pop = fl_2020_pop[fl_2020_pop.Area.str.contains('County')]
+
+    # Create new Couty Column by spliting Area
+    fl_2020_pop["county"] = fl_2020_pop["Area"].map(lambda x: x.replace('County',''))
+    fl_2020_pop["county"] = fl_2020_pop["county"].map(lambda x: x.encode('ascii', 'ignore'))
+    fl_2020_pop["county"] = fl_2020_pop["county"].map(lambda x: x.decode())
+    fl_2020_pop["county"] = fl_2020_pop["county"].map(lambda x: x.strip(' '))
+
+    # Drop unnecessary columns, rename Headers, set index to county
+    fl_2020_pop = fl_2020_pop.drop(columns = ['Area','Total Change', 'Census', 'Inmates', 'Inmates.1'])
+    fl_2020_pop = fl_2020_pop.rename(columns = {'Population Estimate':'population'})
+    # fl_2020_pop = fl_2020_pop.set_index(['county'])
+
+    # Add year column and reorder columns
+    fl_2020_pop['year'] = "2020"
+    fl_2020_pop = fl_2020_pop[['year', 'population','county']]
+
+    # Concatenate 2018, 2019, & 2020 data
+    fl_combined_demo = pd.concat([fl_2018_demo, fl_2019_demo,fl_2020_pop])
+
+    # Check for unmatched counties
+    for county in fl_combined_demo['county'].unique():
+        if county in county_ls:
+            pass
+        else:
+            print(county)
+
+    # Combine census & station data and bring in county id
+    demo_df = pd.DataFrame()
+    for year in year_ls:
+        df = county_df
+        df['year'] = year
+        demo_df = demo_df.append(df,ignore_index=True)
+
+    demo_df = demo_df.astype({'county': 'str','year':'str'})
+    fl_combined_demo = fl_combined_demo.astype({'county': 'str','year':'str'})
+    county_stations_df = county_stations_df.astype({'county': 'str','year':'str'})
+
+    demo_df = demo_df.merge(fl_combined_demo, how='left', on=['county','year'], suffixes=('','_x'))
+    demo_df = demo_df.merge(county_stations_df, how='left', on=['county','year'], suffixes=('','_y'))
+    demo_df = demo_df[['county_id','year','population','income','station_count']]
+
+except Error as e:
+    print(e)
 
 
 # ==== Create SQLite Database =====
@@ -320,23 +359,37 @@ try:
     cursor.execute("DROP TABLE IF EXISTS vehicle")
     cursor.execute("DROP TABLE IF EXISTS registration")
 
+    # Replace Nan with None
+    demo_df['station_count'] = demo_df['station_count'].fillna(0)
+    evreg_df['reg_count'] = evreg_df['reg_count'].fillna(0)
+    demo_df = demo_df.astype('str')
+    demo_df['population'] = demo_df['population'].replace('nan','0')
+    demo_df = demo_df.astype({'population':'float'})
+    demo_df['income'] = demo_df['income'].replace('nan','0')
+    demo_df['station_count'] = demo_df['station_count'].replace('nan','0')
+    # demo_df['station_count'] = evreg_df['station_count'].fillna(0)
+
+    # Set data types
+    county_df = county_df.astype({'county_id':'int','county':'str'})
+    vehicles_df = vehicles_df.astype({'vehicle_id':'int','make':'str','model':'str'})
+    evreg_df = evreg_df.astype({'county_id':'int','year':'int','vehicle_id':'int','reg_count':'int'})
+    demo_df = demo_df.astype({'county_id':'int','year':'int','population':'int','income':'int','station_count':'float'})
+
     # Create tables
-    clean_county_df.to_sql('county', conn, if_exists='replace', index=False)
-    clean_vehicles_df.to_sql('vehicle', conn, if_exists='replace', index=False)
-    clean_evreg_df.to_sql('registration', conn, if_exists='replace', index=False)
-    clean_demo_df.to_sql('demographic', conn, if_exists='replace', index=False)
+    county_df.to_sql('county', conn, if_exists='replace', index=False)
+    vehicles_df.to_sql('vehicle', conn, if_exists='replace', index=False)
+    evreg_df.to_sql('registration', conn, if_exists='replace', index=False)
+    demo_df.to_sql('demographic', conn, if_exists='replace', index=False)
 
     # Commit the changes
     conn.commit()
-
-    # print(pd.read_sql('''SELECT c.county, v.make, v.model, r.report_date, r.reg_count
-    #                     FROM county c
-    #                     INNER JOIN registration r ON c.county_id = r.county_id
-    #                     INNER JOIN vehicle v ON v.vehicle_id = r.vehicle_id
-    #                     ORDER BY r.reg_count DESC''', conn))
-
-    # print(pd.read_sql('''SELECT * FROM demographic''', conn))
-    # print(f'SQLite version: {sqlite3.version}')
+    print(pd.read_sql('''SELECT c.county, r.*, v.*, d.*
+                        FROM county c
+                        LEFT JOIN registration r ON c.county_id = r.county_id
+                        LEFT JOIN vehicle v ON v.vehicle_id = r.vehicle_id
+                        LEFT JOIN demographic d ON c.county_id = r.county_id
+                        WHERE r.county_id is null or d.county_id is null
+                        ORDER BY c.county_id DESC''', conn))
     print(f'SQLite database created successfully.')
 
 except Error as e:
