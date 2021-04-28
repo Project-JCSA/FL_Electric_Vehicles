@@ -13,30 +13,30 @@ function init(){
     
         // Establish Dropdowns
     
-        // Get distinct Years from data
-        let years = [... new Set(evData.map(d => d.year))];
+        // // Get distinct Years from data
+        // let years = [... new Set(evData.map(d => d.year))];
     
-        // Append years to dropdown
-        years.forEach(year => {
-            yearSelect.append("option").attr("value", year).text(year);
-        })
+        // // Append years to dropdown
+        // years.forEach(year => {
+        //     yearSelect.append("option").attr("value", year).text(year);
+        // })
     
-        // Get distinct Counties from data
-        let counties = [... new Set(evData.map(d => d.county))]
+        // // Get distinct Counties from data
+        // let counties = [... new Set(evData.map(d => d.county))]
         
-        // Append counties to dropdown
-        counties.forEach(county => {
-            countySelect.append("option").attr("value", county).text(county);
-        })
+        // // Append counties to dropdown
+        // counties.forEach(county => {
+        //     countySelect.append("option").attr("value", county).text(county);
+        // })
     
-        // Establish Year ID and County ID
-        let yearID = yearSelect.property("value");
-        let countyID = countySelect.property("value");
-        console.log(yearID)
-        console.log(countyID)
+        // // Establish Year ID and County ID
+        // let yearID = yearSelect.property("value");
+        // let countyID = countySelect.property("value");
+        // console.log(yearID)
+        // console.log(countyID)
         
-        // yearID = 2018
-        // countyID = "Alachua"
+        yearID = 2018
+        countyID = "Alachua"
     
         // Filter and Sort Metadata
         let filterData = evData.filter(d => d["year"] === yearID);
@@ -56,9 +56,9 @@ function init(){
     
     
         
-        console.log(filterData)
-        console.log(barData)
-        console.log(pieData)
+        // console.log(filterData)
+        // console.log(barData)
+        // console.log(pieData)
     
         
         yearSelect.on("change", () => yearChanged(yearSelect));
@@ -77,7 +77,7 @@ function init(){
     
     
     // function to change Y Axis Scale
-    function yScale(barData, height, chosenYAxis) {
+    function yScale(barData, chosenYAxis, height) {
         // create scales
         let yScale = d3.scaleLinear()
             .domain([0, d3.max(barData, d => d[chosenYAxis]) + 10])
@@ -141,11 +141,12 @@ function init(){
     }
     
     // function to change circles from Y Axis
-    function changeBar(barGroup, newYScale, chosenYAxis) {
+    function changeBar(barGroup, newYScale, chosenYAxis, height) {
     
         barGroup.transition()
             .duration(500)
             .attr("y", d => newYScale(d[chosenYAxis]))
+            .attr("height", d => height - newYScale(d[chosenYAxis]))
     
         return barGroup;
       }
@@ -184,6 +185,7 @@ function init(){
     
     
         // Initial Paramaters
+        
         let chosenYAxis = "registration";
     
         // set xLinearScale
@@ -191,10 +193,10 @@ function init(){
         let xScale = d3.scaleBand()
             .domain(barData.map(d => d.county))
             .range([0,width])
-            .padding(0.1)
+            .padding(0.5)
     
         // set yLinearScale
-        let yLinearScale = yScale(barData, height, chosenYAxis);
+        let yLinearScale = yScale(barData, chosenYAxis, height);
         // let yScale = d3.scaleLinear()
         //     .domain([0, d3.max(barData, d => d[chosenYAxis]) + 2])
         //     .range([height, 0]);
@@ -211,9 +213,9 @@ function init(){
             .call(bottomAxis)
             .selectAll("text")  
             .style("text-anchor", "end")
-            .attr("dx", "-.8em")
-            .attr("dy", ".15em")
-            .attr("transform", "rotate(-90)");
+            .attr("dx", "-.6em")
+            .attr("dy", "-.2em")
+            .attr("transform", "rotate(-65)");
                 
     
         // append y axis
@@ -277,13 +279,13 @@ function init(){
         chosenYAxis = yvalue;
 
         // updates Y scale for new data
-        yLinearScale = yScale(barData, chosenYAxis);
+        yLinearScale = yScale(barData, chosenYAxis, height);
 
         // updates y axis with transition
         yAxis = changeYAxes(yLinearScale, yAxis);
 
         // updates circles with new y values
-        // barGroup = changeBar(barGroup, yLinearScale, chosenYAxis);
+        barGroup = changeBar(barGroup, yLinearScale, chosenYAxis, height);
 
         // updates tooltips with new info
         // circlesGroup = changeToolTip(chosenXAxis, chosenYAxis, circlesGroup);
@@ -424,6 +426,7 @@ function init(){
     }
     
 function yearChanged(){
+
     let yearID = d3.select("#selYear").property("value");
     init(yearID)
 }
