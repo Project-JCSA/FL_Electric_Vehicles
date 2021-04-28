@@ -136,13 +136,9 @@ function init(){
         .on("mouseout", function(data,index){
             toolTip.hide(data);
         })
-        // Create event listners on the text for tooltip  
-        // barGroup.selectAll("text").on("mouseover", function(data){
-        //     toolTip.show(data,this);
-        // })
-        // .on("mouseout", function(data,index){
-        //     toolTip.hide(data);
-        // })
+
+    
+        
     
         return barGroup;
     }
@@ -249,7 +245,7 @@ function init(){
 
         // Establish Y Labels
         let YaxisLabels = chartGroup.append("g")
-        .attr("transform", `translate(${width - width}, ${height / 1.5})`);
+        .attr("transform", `translate(${width - width}, ${height / 2})`);
     
         let registrationLabel = YaxisLabels.append("text")
             .attr("transform", "rotate(-90)")
