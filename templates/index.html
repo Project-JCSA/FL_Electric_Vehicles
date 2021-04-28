@@ -31,11 +31,17 @@
   </div>
     <div class="container px-0">
         <div class="row">
-          <div class="col-md-12">
-            <div class="well">
-              <h5>Select Year: <select id="selDataset" onchange="optionChanged(this.value)"></select></h5>
+            <div class="col-md-4">
+                <div class="well">
+                    <h5>Select Year: <select id="selYear" onchange="optionChanged(this.value)"></select></h5>
+                </div>
             </div>
-          </div>
+            <div class="col-md-4">
+                <div class="well">
+                    <h5>Select County: <select id="selCounty" onchange="optionChanged(this.value)"></select></h5>
+                </div>
+            </div>
+          
         </div>
         <div class="row">
             <div class="col-md-8" id="bar">
@@ -81,10 +87,11 @@ crossorigin=""></script>
 
 <!-- API key -->
 <script type="text/javascript" src="static/js/config.js"></script>
+<script type="text/javascript" src="static/js/app.js"></script>
 <!-- <script type="text/javascript" src="static/app2.js"></script> -->
-<script type="text/javascript" src="static/js/bar.js"></script>
-<script type="text/javascript" src="static/js/pie.js"></script>
-<script type="text/javascript" src="static/js/flo_map.js"></script>
+<!-- <script type="text/javascript" src="static/js/bar.js"></script> -->
+<!-- <script type="text/javascript" src="static/js/pie.js"></script>
+<script type="text/javascript" src="static/js/flo_map.js"></script> -->
 
 </body>
 </html>
