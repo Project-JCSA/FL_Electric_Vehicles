@@ -23,3 +23,7 @@ html {
   background-position-y: 220%;
   background-image: url("https://icdn2.digitaltrends.com/image/vw-electric-id-buzz-concept-beach-1500x1000.jpg")
 }
+
+h5 {
+  font-size: 1em;
+}

@@ -33,27 +33,28 @@
         <div class="row">
             <div class="col-md-4">
                 <div class="well">
-                    <h5>Select Year: <select id="selYear" onchange="optionChanged(this.value)"></select></h5>
+                    <h5>Select Year: <select id="selYear" onchange="yearChanged(this.value)"></select></h5>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="well">
-                    <h5>Select County: <select id="selCounty" onchange="optionChanged(this.value)"></select></h5>
+                    <h5>Select County: <select id="selCounty" onchange="countyChanged(this.value)"></select></h5>
                 </div>
             </div>
           
         </div>
         <div class="row">
-            <div class="col-md-8" id="bar">
+            <div class="col-md-12">
+              <div id="bar" class=""></div>
             </div>
-            <div class="col-md-4" id="pie"></div>
+            <!-- <div class="col-md-4" id="pie"></div> -->
         </div>
         <div class="row">
           <div class="col-md-8">
             <!-- map div -->
             <div id="map"></div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-4" id="pie">
             <!-- <div id="pie">
                 <button onclick="update(data1)">2018</button>
                 <button onclick="update(data2)">2019</button>
