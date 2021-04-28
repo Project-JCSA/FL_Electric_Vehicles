@@ -119,8 +119,15 @@ function init(){
             return (`${d.county}<br>
                 ${ylabel} ${d[chosenYAxis]}`);
             });
+
+            var tip = d3.tip()
+            .attr('class', 'd3-tip')
+            .offset([-10, 0])
+            .html(function(d) {
+              return "<strong>Frequency:</strong> <span style='color:red'>" + d.frequency + "</span>";
+            })
     
-        circlesGroup.call(toolTip);
+        barGroup.call(toolTip);
     
         // Create event listners on the bar for tooltip
         barGroup.on("mouseover", function(data){
@@ -130,12 +137,12 @@ function init(){
             toolTip.hide(data);
         })
         // Create event listners on the text for tooltip  
-        barGroup.selectAll("text").on("mouseover", function(data){
-            toolTip.show(data,this);
-        })
-        .on("mouseout", function(data,index){
-            toolTip.hide(data);
-        })
+        // barGroup.selectAll("text").on("mouseover", function(data){
+        //     toolTip.show(data,this);
+        // })
+        // .on("mouseout", function(data,index){
+        //     toolTip.hide(data);
+        // })
     
         return barGroup;
     }
@@ -185,7 +192,6 @@ function init(){
     
     
         // Initial Paramaters
-        
         let chosenYAxis = "registration";
     
         // set xLinearScale
@@ -238,6 +244,9 @@ function init(){
             // .attr("x", (d, i) => i * (barWidth + barSpacing))
             // .attr("y", d => height - d.registration * scaleY);
     
+        // Setup tooltips
+        changeToolTip(chosenYAxis, barGroup)
+
         // Establish Y Labels
         let YaxisLabels = chartGroup.append("g")
         .attr("transform", `translate(${width - width}, ${height / 1.5})`);
@@ -265,7 +274,8 @@ function init(){
             .attr("value", "income")
             .classed("inactive", true)
             .text("Household Income")
-    
+
+       
 
         // y axis labels event listener
         YaxisLabels.selectAll("text")
@@ -288,7 +298,7 @@ function init(){
         barGroup = changeBar(barGroup, yLinearScale, chosenYAxis, height);
 
         // updates tooltips with new info
-        barGroup = changeToolTip(chosenXAxis, chosenYAxis, barGroup);
+        barGroup = changeToolTip(chosenYAxis, barGroup);
 
         // changes classes to change bold text
         if (chosenYAxis === "registration") {
