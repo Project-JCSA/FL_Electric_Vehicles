@@ -20,6 +20,8 @@ Our project will look at why electric vehicle registrations have increased over 
 * [Alternate County Boundaries](https://public.opendatasoft.com/explore/dataset/us-county-boundaries/table/?disjunctive.[…]junctive.state_name&sort=stusab&refine.state_name=Florida) - GeoJson
 * [Zip Codes to Counties](https://data.world/niccolley/us-zipcode-to-county-state/workspace/file?filename=ZIP-COUNTY-FIPS_2018-03.csv) - CSV
 
+## JavaScrpt Library
+* [ifvisible.js](https://github.com/serkanyersen/ifvisible.js)
 
 ## Vision Board
 ![Vision of final page](https://github.com/Project-JCSA/FL_Electric_Vehicles/blob/main/Images/VisionBoard.jpg)
