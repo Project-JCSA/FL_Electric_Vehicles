@@ -1,8 +1,6 @@
 function init(){
     
-    let yearSelect = d3.select("#selYear");
     
-    let countySelect = d3.select("#selCounty");
     
     let datalink = "http://127.0.0.1:5000/data"
     
@@ -10,11 +8,19 @@ function init(){
         
     
         if (err) throw err;
+
+        // Parse Data to make sure all are integers
+        evData.forEach(function(data){
+            data.year = parseInt(data.year);
+            data.population = parseInt(data.population);
+            data.income = parseInt(data.income)
+        });
     
         // Establish Dropdowns
     
         // // Get distinct Years from data
         // let years = [... new Set(evData.map(d => d.year))];
+        // console.log(years)
     
         // // Append years to dropdown
         // years.forEach(year => {
@@ -32,6 +38,8 @@ function init(){
         // // Establish Year ID and County ID
         // let yearID = yearSelect.property("value");
         // let countyID = countySelect.property("value");
+        getIDS(evData)
+
         // console.log(yearID)
         // console.log(countyID)
         
@@ -61,12 +69,12 @@ function init(){
         // console.log(pieData)
     
         
-        yearSelect.on("change", () => yearChanged(yearSelect));
-        countySelect.on("change", () => countyChanged(countySelect));
+        // yearSelect.on("change", () => yearChanged(yearSelect));
+        // countySelect.on("change", () => countyChanged(countySelect));
         
     
         barChart(barData)
-        pieChart()
+        pieChart(pieData, countyID, yearID)
         map()
 
         
@@ -75,6 +83,35 @@ function init(){
     
 };
     
+function getIDS(evData){
+
+    let yearSelect = d3.select("#selYear");
+    
+    let countySelect = d3.select("#selCounty");
+
+    // Get distinct Years from data
+    let years = [... new Set(evData.map(d => d.year))];
+
+    // Append years to dropdown
+    years.forEach(year => {
+        yearSelect.append("option").attr("value", year).text(year);
+    })
+
+    // Get distinct Counties from data
+    let counties = [... new Set(evData.map(d => d.county))]
+    
+    // Append counties to dropdown
+    counties.forEach(county => {
+        countySelect.append("option").attr("value", county).text(county);
+    })
+
+    // Establish Year ID and County ID
+    let yearID = yearSelect.property("value");
+    let countyID = countySelect.property("value");
+
+    return yearID
+
+}
     
     // function to change Y Axis Scale
     function yScale(barData, chosenYAxis, height) {
@@ -161,7 +198,7 @@ function init(){
         // console.log(svgWidth)
     
         let svgWidth = 1100;
-        let svgHeight = 500;
+        let svgHeight = 400;
     
         var margin = {
             top:25,
@@ -338,19 +375,45 @@ function init(){
     
     
     // Function to create PieChart
-    function pieChart(){
-        var data = [{
-            values: [19, 26, 55],
-            labels: ['Residential', 'Non-Residential', 'Utility'],
-            type: 'pie'
-          }];
+    function pieChart(pieData, countyID, yearID){
+        // Isolate values and labels for chart
+        let model_reg = pieData.map(d => d.reg_count)
+        let makemodel = pieData.map(d => { return d. make + " " + d.model});
+
+        
+        // Create Data
+        let data = 
+        [{
+            values: model_reg,
+            labels: makemodel,
+            domain:{column:0},
+            hoverinfo: 'label+percent',
+            hole: .4,
+            type: 'pie',
+            textposition: 'inside'
+        }];
           
-          var layout = {
-            height: 500,
-            width: d3.select('pie').clientWidth
+        let layout = {
+            title: `${yearID} ${countyID} Model Registrations`,
+            annotations: 
+            [{
+                font: {
+                    size: 14
+                },
+                showarrow: false,
+                text: 'Models',
+                x: .5,
+                y:  0.5
+            }],
+            automargin: true,
+            height: 400,
+            width: 400,
+            // width: d3.select('pie').clientWidth,
+            showlegend: false,
+            // grid: {rows: 1, columns: 2}
           };
           
-          Plotly.newPlot('pie', data, layout);
+          Plotly.newPlot('pie', data, layout, {displayModeBar: false});
     };
     
     
@@ -376,6 +439,7 @@ function init(){
         
         // Use this link to get the geojson data.
         var link = "static/data/flo.geojson";
+        var link2 ="static/data/statplot.json";
       
         // Function that will determine the color of a neighborhood based on the county it belongs to
         function chooseColor(county) {
@@ -425,21 +489,43 @@ function init(){
                 // Giving each feature a pop-up with information pertinent to it
                 layer.bindPopup("<h1>" + feature.properties.namelsad + "</h1> <hr> <h2>" + feature.properties.state_name + "</h2>");
         
+
+            //     d3.json(link2).then(function(response) {
+            //         var markers = L.markerClusterGroup();
+            //         // Loop through data
+            //         for (var i = 0; i < response.length; i++) {
+            
+            //             // Set the data location property to a variable
+            //             var location = response[i].location;
+            
+            //             // Check for location property
+            //             if (location) {
+                
+            //                 // Add a new marker to the cluster group and bind a pop-up
+            //                 markers.addLayer(L.marker([location.coordinates[1], location.coordinates[0]])
+            //                 .bindPopup(response[i].descriptor));
+            //             }
+            
+            //         }
+            
+            //         // Add our marker cluster layer to the map
+            //         myMap.addLayer(markers);
+            // })
             }
-            }).addTo(myMap);
-        });
+        }).addTo(myMap);
     
-    }
+    });
+}
     
 function yearChanged(){
 
     let yearID = d3.select("#selYear").property("value");
-    init(yearID)
+    return yearID
 }
 
 function countyChanged(){
     let countyID = d3.select("selCounty").property("value");
-    init(countyID)
+    return countyID
 }
 
 
