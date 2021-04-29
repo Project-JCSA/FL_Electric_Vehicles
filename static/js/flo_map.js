@@ -70,20 +70,20 @@ d3.json(link).then(function(data) {
       d3.json(link2).then(function(response) {
         var markers = L.markerClusterGroup();
           // Loop through data
-  for (var i = 0; i < response.length; i++) {
+        for (var i = 0; i < response.length; i++) {
 
-    // Set the data location property to a variable
-    var location = response[i].location;
+          // Set the data location property to a variable
+          var location = response[i].location;
 
-    // Check for location property
-    if (location) {
+          // Check for location property
+          if (location) {
 
-      // Add a new marker to the cluster group and bind a pop-up
-      markers.addLayer(L.marker([location.coordinates[1], location.coordinates[0]])
-        .bindPopup(response[i].descriptor));
-    }
+            // Add a new marker to the cluster group and bind a pop-up
+            markers.addLayer(L.marker([location.coordinates[1], location.coordinates[0]])
+              .bindPopup(response[i].descriptor));
+          }
 
-  }
+        }
 
   // Add our marker cluster layer to the map
   myMap.addLayer(markers);

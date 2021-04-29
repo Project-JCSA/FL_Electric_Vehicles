@@ -8,7 +8,7 @@ import json
 # Create an instance of Flask
 app = Flask(__name__)
 
-# Use flask_pymongo to set up mongo connection
+# Setup connection to SQLite DB
 db_path = os.path.abspath('./static/data/sqlite.db')
 
 @app.route("/")
@@ -37,8 +37,6 @@ def sqlquery():
                                 ''', conn)
     return Response(myData.to_json(orient="records", date_format="iso"), mimetype="application/json")
 
-    # myData = pd.read_sql('''SELECT * FROM demographic''', conn)
-    # return Response(myData.to_json(orient="records", date_format="iso"), mimetype="application/json")
 
 
 if __name__ == "__main__":
