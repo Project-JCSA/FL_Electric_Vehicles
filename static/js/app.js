@@ -112,314 +112,327 @@ function getIDS(evData){
     return yearID
 
 }
+
+function yearChanged(){
+
+    let yearID = d3.select("#selYear").property("value");
+    return yearID
+}
+
+function countyChanged(){
+    let countyID = d3.select("selCounty").property("value");
+    return countyID
+}
     
-    // function to change Y Axis Scale
-    function yScale(barData, chosenYAxis, height) {
-        // create scales
-        let yScale = d3.scaleLinear()
-            .domain([0, d3.max(barData, d => d[chosenYAxis]) + 10])
-            .range([height, 0]);
-      
-        return yScale;
-      
+// function to change Y Axis Scale
+function yScale(barData, chosenYAxis, height) {
+    // create scales
+    let yScale = d3.scaleLinear()
+        .domain([0, d3.max(barData, d => d[chosenYAxis]) + 10])
+        .range([height, 0]);
+    
+    return yScale;
+    
+}
+
+// function to change Y Axis
+function changeYAxes(newYScale, yAxis) {
+    let leftAxis = d3.axisLeft(newYScale).ticks(10);
+    
+    yAxis.transition()
+        .duration(500)
+        .call(leftAxis);
+    
+    return yAxis;
+}
+
+function changeToolTip(chosenYAxis, barGroup) {
+
+    let ylabel;
+
+    if (chosenYAxis === "registration") {
+        ylabel = "EV Registration";
     }
-    
-    // function to change Y Axis
-    function changeYAxes(newYScale, yAxis) {
-        let leftAxis = d3.axisLeft(newYScale).ticks(10);
-      
-        yAxis.transition()
-          .duration(500)
-          .call(leftAxis);
-      
-        return yAxis;
+    else if(chosenYAxis === "population") {
+        ylabel = "Population";
     }
-    
-    function changeToolTip(chosenYAxis, barGroup) {
-
-        let ylabel;
-    
-        if (chosenYAxis === "registration") {
-            ylabel = "EV Registration";
-        }
-        else if(chosenYAxis === "population") {
-            ylabel = "Population";
-        }
-        else {
-            ylabel = "Income";
-        }
-    
-        let toolTip = d3.tip()
-            .attr("class", "tooltip")
-            .offset([0, -20])
-            .html(function(d) {
-            return (`${d.county}<br>
-                ${ylabel} ${d[chosenYAxis]}`);
-            });
-
-            var tip = d3.tip()
-            .attr('class', 'd3-tip')
-            .offset([-10, 0])
-            .html(function(d) {
-              return "<strong>Frequency:</strong> <span style='color:red'>" + d.frequency + "</span>";
-            })
-    
-        barGroup.call(toolTip);
-    
-        // Create event listners on the bar for tooltip
-        barGroup.on("mouseover", function(data){
-            toolTip.show(data,this);
-        })
-        .on("mouseout", function(data,index){
-            toolTip.hide(data);
-        })
-
-    
-        
-    
-        return barGroup;
+    else {
+        ylabel = "Income";
     }
-    
-    // function to change circles from Y Axis
-    function changeBar(barGroup, newYScale, chosenYAxis, height) {
-    
-        barGroup.transition()
-            .duration(500)
-            .attr("y", d => newYScale(d[chosenYAxis]))
-            .attr("height", d => height - newYScale(d[chosenYAxis]))
-    
-        return barGroup;
-      }
-    
-    // Function to create barChart
-    function barChart(barData){
-        // let svgWidth = d3.select('bar').clientWidth;
-        // let svgHeight = svgWidth / 3.236;
-        // console.log(svgWidth)
-    
-        let svgWidth = 1100;
-        let svgHeight = 400;
-    
-        var margin = {
-            top:25,
-            right:25,
-            bottom:100,
-            left:100
-        };
-    
-        // Create an SVG wrapper, append an SVG group that will hold our chart,
-        // and shift the latter by left and top margins.
-        let svg = d3.select("#bar")
-            .append("svg")
-            .attr("width", svgWidth)
-            .attr("height", svgHeight);
-    
-    
-        // Append an SVG group
-        let chartGroup = svg.append("g")
-            .attr("transform", `translate(${margin.left}, ${margin.top})`);
-    
-        // Establish height and width
-        let width = svgWidth - margin.left - margin.right;
-        let height = svgHeight - margin.top - margin.bottom;
-    
-    
-        // Initial Paramaters
-        let chosenYAxis = "registration";
-    
-        // set xLinearScale
-        // let xLinearScale = xScale(censusData, chosenXAxis);
-        let xScale = d3.scaleBand()
-            .domain(barData.map(d => d.county))
-            .range([0,width])
-            .padding(0.5)
-    
-        // set yLinearScale
-        let yLinearScale = yScale(barData, chosenYAxis, height);
-        // let yScale = d3.scaleLinear()
-        //     .domain([0, d3.max(barData, d => d[chosenYAxis]) + 2])
-        //     .range([height, 0]);
-    
-        
-        // create initial axis
-        let bottomAxis = d3.axisBottom(xScale);
-        let leftAxis = d3.axisLeft(yLinearScale).ticks(10);
-    
-        // append x axis
-        let xAxis = chartGroup.append("g")
-            .classed("x-axis", true)
-            .attr("transform", `translate(0,${height})`)
-            .call(bottomAxis)
-            .selectAll("text")  
-            .style("text-anchor", "end")
-            .attr("dx", "-.6em")
-            .attr("dy", "-.2em")
-            .attr("transform", "rotate(-65)");
-                
-    
-        // append y axis
-        let yAxis = chartGroup.append("g")
-            .classed("y-axis", true)
-            .attr("transform", `translate (0)`)
-            .call(leftAxis);
-    
-        // Create code to build the bar chart using the barData.
-        barGroup = chartGroup.selectAll(".bar")
-            .data(barData)
-            .enter()
-            .append("rect")
-            .classed("class", "bar")
-            .attr("x", d => xScale(d.county))
-            .attr("y", d => yLinearScale(d[chosenYAxis]))
-            .attr("width", xScale.bandwidth())
-            .attr("height", d => height - yLinearScale(d[chosenYAxis]))
-            .attr("fill", "green");
-            // .attr("x", (d, i) => i * (barWidth + barSpacing))
-            // .attr("y", d => height - d.registration * scaleY);
-    
-        // Setup tooltips
-        changeToolTip(chosenYAxis, barGroup)
 
-        // Establish Y Labels
-        let YaxisLabels = chartGroup.append("g")
-        .attr("transform", `translate(${width - width}, ${height / 2})`);
-    
-        let registrationLabel = YaxisLabels.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("x", 0)
-            .attr("y", -50)
-            .attr("value", "registration")
-            .classed("active", true)
-            .text("EV Registrations")
-    
-        let populationLabel = YaxisLabels.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("x", 0)
-            .attr("y", -70)
-            .attr("value", "population")
-            .classed("inactive", true)
-            .text("Population")
-    
-        let incomeLabel = YaxisLabels.append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("x", 0)
-            .attr("y", -90)
-            .attr("value", "income")
-            .classed("inactive", true)
-            .text("Household Income")
-
-       
-
-        // y axis labels event listener
-        YaxisLabels.selectAll("text")
-        .on("click", function(){
-
-        // get value of selection
-        let yvalue = d3.select(this).attr("value");
-        if (yvalue !== chosenYAxis) {
-
-        // replaces chosenYAxis with value
-        chosenYAxis = yvalue;
-
-        // updates Y scale for new data
-        yLinearScale = yScale(barData, chosenYAxis, height);
-
-        // updates y axis with transition
-        yAxis = changeYAxes(yLinearScale, yAxis);
-
-        // updates circles with new y values
-        barGroup = changeBar(barGroup, yLinearScale, chosenYAxis, height);
-
-        // updates tooltips with new info
-        barGroup = changeToolTip(chosenYAxis, barGroup);
-
-        // changes classes to change bold text
-        if (chosenYAxis === "registration") {
-            registrationLabel
-                .classed("active", true)
-                .classed("inactive", false);
-            populationLabel
-                .classed("active", false)
-                .classed("inactive", true);
-            incomeLabel
-                .classed("active", false)
-                .classed("inactive", true);
-        }
-        else if (chosenYAxis === "population") {
-            registrationLabel
-                .classed("active", false)
-                .classed("inactive", true);
-            populationLabel
-                .classed("active", true)
-                .classed("inactive", false);
-            incomeLabel
-                .classed("active", false)
-                .classed("inactive", true);
-        }
-        else {
-            registrationLabel
-                .classed("active", false)
-                .classed("inactive", true);
-            populationLabel
-                .classed("active", false)
-                .classed("inactive", true);
-            incomeLabel
-                .classed("active", true)
-                .classed("inactive", false);
-            }
-        }
+    let toolTip = d3.tip()
+        .attr("class", "tooltip")
+        .offset([0, -20])
+        .html(function(d) {
+        return (`${d.county}<br>
+            ${ylabel} ${d[chosenYAxis]}`);
         });
-        
-    }
-    
-    
-    
-    // Function to create PieChart
-    function pieChart(pieData, countyID, yearID){
-        // Isolate values and labels for chart
-        let model_reg = pieData.map(d => d.reg_count)
-        let makemodel = pieData.map(d => { return d. make + " " + d.model});
 
-        
-        // Create Data
-        let data = 
-        [{
-            values: model_reg,
-            labels: makemodel,
-            domain:{column:0},
-            hoverinfo: 'label+percent',
-            hole: .4,
-            type: 'pie',
-            textposition: 'inside'
-        }];
-          
-        let layout = {
-            title: `${yearID} ${countyID} Model Registrations`,
-            annotations: 
-            [{
-                font: {
-                    size: 14
-                },
-                showarrow: false,
-                text: 'Models',
-                x: .5,
-                y:  0.5
-            }],
-            automargin: true,
-            height: 400,
-            width: 400,
-            // width: d3.select('pie').clientWidth,
-            showlegend: false,
-            // grid: {rows: 1, columns: 2}
-          };
-          
-          Plotly.newPlot('pie', data, layout, {displayModeBar: false});
+        var tip = d3.tip()
+        .attr('class', 'd3-tip')
+        .offset([-10, 0])
+        .html(function(d) {
+            return "<strong>Frequency:</strong> <span style='color:red'>" + d.frequency + "</span>";
+        })
+
+    barGroup.call(toolTip);
+
+    // Create event listners on the bar for tooltip
+    barGroup.on("mouseover", function(data){
+        toolTip.show(data,this);
+    })
+    .on("mouseout", function(data,index){
+        toolTip.hide(data);
+    })
+
+
+    
+
+    return barGroup;
+}
+
+// function to change circles from Y Axis
+function changeBar(barGroup, newYScale, chosenYAxis, height) {
+
+    barGroup.transition()
+        .duration(500)
+        .attr("y", d => newYScale(d[chosenYAxis]))
+        .attr("height", d => height - newYScale(d[chosenYAxis]))
+
+    return barGroup;
+    }
+
+// Function to create barChart
+function barChart(barData){
+    // let svgWidth = parseInt(d3.select('bar').style('width'), 10);
+    // parseInt(d3.select('#my_dataviz').style('width'), 10)
+    // let svgHeight = svgWidth / 3.236;
+    // console.log(svgWidth)
+
+    let svgWidth = 1100;
+    let svgHeight = 400;
+
+    var margin = {
+        top:25,
+        right:25,
+        bottom:100,
+        left:100
     };
+
+    // Create an SVG wrapper, append an SVG group that will hold our chart,
+    // and shift the latter by left and top margins.
+    let svg = d3.select("#bar")
+        .append("svg")
+        .attr("width", svgWidth)
+        .attr("height", svgHeight);
+        // .attr("viewBox", `0 0 300 200`);
+
+
+    // Append an SVG group
+    let chartGroup = svg.append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    // Establish height and width
+    let width = svgWidth - margin.left - margin.right;
+    let height = svgHeight - margin.top - margin.bottom;
+
+
+    // Initial Paramaters
+    let chosenYAxis = "registration";
+
+    // set xLinearScale
+    // let xLinearScale = xScale(censusData, chosenXAxis);
+    let xScale = d3.scaleBand()
+        .domain(barData.map(d => d.county))
+        .range([0,width])
+        .padding(0.5)
+
+    // set yLinearScale
+    let yLinearScale = yScale(barData, chosenYAxis, height);
+    // let yScale = d3.scaleLinear()
+    //     .domain([0, d3.max(barData, d => d[chosenYAxis]) + 2])
+    //     .range([height, 0]);
+
+    
+    // create initial axis
+    let bottomAxis = d3.axisBottom(xScale);
+    let leftAxis = d3.axisLeft(yLinearScale).ticks(10);
+
+    // append x axis
+    let xAxis = chartGroup.append("g")
+        .classed("x-axis", true)
+        .attr("transform", `translate(0,${height})`)
+        .call(bottomAxis)
+        .selectAll("text")  
+        .style("text-anchor", "end")
+        .attr("dx", "-.6em")
+        .attr("dy", "-.2em")
+        .attr("transform", "rotate(-65)");
+            
+
+    // append y axis
+    let yAxis = chartGroup.append("g")
+        .classed("y-axis", true)
+        .attr("transform", `translate (0)`)
+        .call(leftAxis);
+
+    // Create code to build the bar chart using the barData.
+    barGroup = chartGroup.selectAll(".bar")
+        .data(barData)
+        .enter()
+        .append("rect")
+        .classed("class", "bar")
+        .attr("x", d => xScale(d.county))
+        .attr("y", d => yLinearScale(d[chosenYAxis]))
+        .attr("width", xScale.bandwidth())
+        .attr("height", d => height - yLinearScale(d[chosenYAxis]))
+        .attr("fill", "green");
+        // .attr("x", (d, i) => i * (barWidth + barSpacing))
+        // .attr("y", d => height - d.registration * scaleY);
+
+    // Setup tooltips
+    changeToolTip(chosenYAxis, barGroup)
+
+    // Establish Y Labels
+    let YaxisLabels = chartGroup.append("g")
+    .attr("transform", `translate(${width - width}, ${height / 2})`);
+
+    let registrationLabel = YaxisLabels.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", 0)
+        .attr("y", -50)
+        .attr("value", "registration")
+        .classed("active", true)
+        .text("EV Registrations")
+
+    let populationLabel = YaxisLabels.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", 0)
+        .attr("y", -70)
+        .attr("value", "population")
+        .classed("inactive", true)
+        .text("Population")
+
+    let incomeLabel = YaxisLabels.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", 0)
+        .attr("y", -90)
+        .attr("value", "income")
+        .classed("inactive", true)
+        .text("Household Income")
+
+    
+
+    // y axis labels event listener
+    YaxisLabels.selectAll("text")
+    .on("click", function(){
+
+    // get value of selection
+    let yvalue = d3.select(this).attr("value");
+    if (yvalue !== chosenYAxis) {
+
+    // replaces chosenYAxis with value
+    chosenYAxis = yvalue;
+
+    // updates Y scale for new data
+    yLinearScale = yScale(barData, chosenYAxis, height);
+
+    // updates y axis with transition
+    yAxis = changeYAxes(yLinearScale, yAxis);
+
+    // updates circles with new y values
+    barGroup = changeBar(barGroup, yLinearScale, chosenYAxis, height);
+
+    // updates tooltips with new info
+    barGroup = changeToolTip(chosenYAxis, barGroup);
+
+    // changes classes to change bold text
+    if (chosenYAxis === "registration") {
+        registrationLabel
+            .classed("active", true)
+            .classed("inactive", false);
+        populationLabel
+            .classed("active", false)
+            .classed("inactive", true);
+        incomeLabel
+            .classed("active", false)
+            .classed("inactive", true);
+    }
+    else if (chosenYAxis === "population") {
+        registrationLabel
+            .classed("active", false)
+            .classed("inactive", true);
+        populationLabel
+            .classed("active", true)
+            .classed("inactive", false);
+        incomeLabel
+            .classed("active", false)
+            .classed("inactive", true);
+    }
+    else {
+        registrationLabel
+            .classed("active", false)
+            .classed("inactive", true);
+        populationLabel
+            .classed("active", false)
+            .classed("inactive", true);
+        incomeLabel
+            .classed("active", true)
+            .classed("inactive", false);
+        }
+    }
+    });
+    
+}
+
+
+
+// Function to create PieChart
+function pieChart(pieData, countyID, yearID){
+    // Isolate values and labels for chart
+    let model_reg = pieData.map(d => d.reg_count)
+    let makemodel = pieData.map(d => { return d. make + " " + d.model});
+
+    
+    // Create Data
+    let data = 
+    [{
+        values: model_reg,
+        labels: makemodel,
+        domain:{column:0},
+        hoverinfo: 'label+percent',
+        hole: .4,
+        type: 'pie',
+        textposition: 'inside'
+    }];
+        
+    let layout = {
+        title: `${yearID} ${countyID} Model Registrations`,
+        annotations: 
+        [{
+            font: {
+                size: 14
+            },
+            showarrow: false,
+            text: 'Models',
+            x: .5,
+            y:  0.5
+        }],
+        automargin: true,
+        height: 400,
+        width: 400,
+        // width: d3.select('pie').clientWidth,
+        showlegend: false,
+        // grid: {rows: 1, columns: 2}
+        };
+        
+        Plotly.newPlot('pie', data, layout, {displayModeBar: false});
+};
     
     
     
-    //Function to create Map
-    function map(){
+//Function to create Map
+function map(){
     
         // Creating map object
         let myMap = L.map("map", {
@@ -516,18 +529,6 @@ function getIDS(evData){
     
     });
 }
-    
-function yearChanged(){
-
-    let yearID = d3.select("#selYear").property("value");
-    return yearID
-}
-
-function countyChanged(){
-    let countyID = d3.select("selCounty").property("value");
-    return countyID
-}
-
 
 
 init()
