@@ -1,6 +1,8 @@
 function init(){
     
+    let yearSelect = d3.select("#selYear");
     
+    let countySelect = d3.select("#selCounty");
     
     let datalink = "http://127.0.0.1:5000/data"
     
@@ -38,13 +40,16 @@ function init(){
         // // Establish Year ID and County ID
         // let yearID = yearSelect.property("value");
         // let countyID = countySelect.property("value");
-        getIDS(evData)
+        yearID = getIDS(evData)[0];
+        countyID = getIDS(evData)[1];
+        console.log(typeof(yearID))
+        // console.log(countyID)
 
         // console.log(yearID)
         // console.log(countyID)
         
-        yearID = 2018
-        countyID = "Alachua"
+        // yearID = 2018
+        // countyID = "Alachua"
     
         // Filter and Sort Metadata
         let filterData = evData.filter(d => d["year"] === yearID);
@@ -64,13 +69,13 @@ function init(){
     
     
         
-        // console.log(filterData)
+        console.log(filterData)
         // console.log(barData)
-        // console.log(pieData)
+        console.log(pieData)
     
         
-        // yearSelect.on("change", () => yearChanged(yearSelect));
-        // countySelect.on("change", () => countyChanged(countySelect));
+        yearSelect.on("change", () => yearChanged(yearSelect));
+        countySelect.on("change", () => countyChanged(countySelect));
         
     
         barChart(barData)
@@ -109,7 +114,9 @@ function getIDS(evData){
     let yearID = yearSelect.property("value");
     let countyID = countySelect.property("value");
 
-    return yearID
+    yearID = parseInt(yearID)
+
+    return [yearID, countyID]
 
 }
 
@@ -120,7 +127,7 @@ function yearChanged(){
 }
 
 function countyChanged(){
-    let countyID = d3.select("selCounty").property("value");
+    let countyID = d3.select("#selCounty").property("value");
     return countyID
 }
     
@@ -204,7 +211,7 @@ function changeBar(barGroup, newYScale, chosenYAxis, height) {
 
 // Function to create barChart
 function barChart(barData){
-    // let svgWidth = parseInt(d3.select('bar').style('width'), 10);
+    //  let svgWidth = parseInt(d3.select('bar').style('width'), 10);
     // parseInt(d3.select('#my_dataviz').style('width'), 10)
     // let svgHeight = svgWidth / 3.236;
     // console.log(svgWidth)
