@@ -32,6 +32,8 @@ function createMap(evstation) {
     // Pull the "stations" property off of response
     var stations = response.StationName;
   
+    console.log(stations)
+
     // Initialize an array to hold EV markers
     var EVMarkers = [];
   
