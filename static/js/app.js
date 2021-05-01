@@ -65,9 +65,9 @@ function getData(evData, yearID, countyID){
                                     income: filterData.find(d => d.county === county).income,
                                 };
                             });
-    console.log(filterData)
-    console.log(barData)
-    console.log(pieData)
+    // console.log(filterData)
+    // console.log(barData)
+    // console.log(pieData)
 
     // Run initial charts
     barChart(barData, yearID)
@@ -189,6 +189,7 @@ function barChart(barData){
     // parseInt(d3.select('#my_dataviz').style('width'), 10)
     // let svgHeight = svgWidth / 3.236;
     // console.log(svgWidth)
+    d3.selectAll("svg").remove()
 
     let svgWidth = 1100;
     let svgHeight = 400;
@@ -208,6 +209,7 @@ function barChart(barData){
         .attr("height", svgHeight);
         // .attr("viewBox", `0 0 300 200`);
 
+    
 
     // Append an SVG group
     let chartGroup = svg.append("g")
@@ -270,6 +272,7 @@ function barChart(barData){
         .attr("fill", "green");
         // .attr("x", (d, i) => i * (barWidth + barSpacing))
         // .attr("y", d => height - d.registration * scaleY);
+
 
     // Setup tooltips
     changeToolTip(chosenYAxis, barGroup)
