@@ -1,6 +1,8 @@
 function init(){
     
+    let yearSelect = d3.select("#selYear");
     
+    let countySelect = d3.select("#selCounty");
     
     let datalink = "http://127.0.0.1:5000/data"
     
@@ -11,117 +13,96 @@ function init(){
 
         // Parse Data to make sure all are integers
         evData.forEach(function(data){
-            data.year = parseInt(data.year);
             data.population = parseInt(data.population);
             data.income = parseInt(data.income)
         });
     
-        // Establish Dropdowns
-    
         // // Get distinct Years from data
-        // let years = [... new Set(evData.map(d => d.year))];
-        // console.log(years)
-    
+        let years = [... new Set(evData.map(d => d.year))];
+
         // // Append years to dropdown
-        // years.forEach(year => {
-        //     yearSelect.append("option").attr("value", year).text(year);
-        // })
-    
+        years.forEach(year => {
+            yearSelect.append("option").attr("value", year).text(year);
+        })
+
         // // Get distinct Counties from data
-        // let counties = [... new Set(evData.map(d => d.county))]
-        
+        let counties = [... new Set(evData.map(d => d.county))]
+            
         // // Append counties to dropdown
-        // counties.forEach(county => {
-        //     countySelect.append("option").attr("value", county).text(county);
-        // })
-    
+        counties.forEach(county => {
+            countySelect.append("option").attr("value", county).text(county);
+        })
+
         // // Establish Year ID and County ID
-        // let yearID = yearSelect.property("value");
-        // let countyID = countySelect.property("value");
-        getIDS(evData)
+        yearID = getIDS(yearSelect, countySelect)[0];
+        countyID = getIDS(yearSelect, countySelect)[1];
 
-        // console.log(yearID)
-        // console.log(countyID)
-        
-        yearID = 2018
-        countyID = "Alachua"
-    
-        // Filter and Sort Metadata
-        let filterData = evData.filter(d => d["year"] === yearID);
-    
-        let pieData = filterData.filter(d => d["county"] === countyID);
-    
-        let barData = Array.from(new Set(filterData.map(d => d.county)))
-                                .map(county => {
-                                    return {
-                                        county: county,
-                                        registration: filterData.find(d => d.county === county).county_reg_count,
-                                        population: filterData.find(d => d.county === county).population,
-                                        income: filterData.find(d => d.county === county).income,
-                                    };
-                                });
-    
-    
-    
-        
-        // console.log(filterData)
-        // console.log(barData)
-        // console.log(pieData)
-    
-        
-        // yearSelect.on("change", () => yearChanged(yearSelect));
-        // countySelect.on("change", () => countyChanged(countySelect));
-        
-    
-        barChart(barData)
-        pieChart(pieData, countyID, yearID)
-        map()
+        getData(evData, yearID, countyID)
 
+
+        yearSelect.on("change", () => yearChanged(evData));
+        countySelect.on("change", () => countyChanged(evData));
         
     
     });
     
 };
+
+function getData(evData, yearID, countyID){
+    // Filter and Sort Metadata
+    let filterData = evData.filter(d => d["year"] === yearID);
+
+    // Establish variabls for charts
+    let pieData = filterData.filter(d => d["county"] === countyID);
     
-function getIDS(evData){
+    let barData = Array.from(new Set(filterData.map(d => d.county)))
+                            .map(county => {
+                                return {
+                                    year: filterData.find(d => d.county === county).year,
+                                    county: county,
+                                    registration: filterData.find(d => d.county === county).county_reg_count,
+                                    population: filterData.find(d => d.county === county).population,
+                                    income: filterData.find(d => d.county === county).income,
+                                };
+                            });
+    // console.log(filterData)
+    // console.log(barData)
+    // console.log(pieData)
 
-    let yearSelect = d3.select("#selYear");
-    
-    let countySelect = d3.select("#selCounty");
+    // Run initial charts
+    barChart(barData, yearID)
+    pieChart(pieData, countyID, yearID)
+    // map()
+}
 
-    // Get distinct Years from data
-    let years = [... new Set(evData.map(d => d.year))];
-
-    // Append years to dropdown
-    years.forEach(year => {
-        yearSelect.append("option").attr("value", year).text(year);
-    })
-
-    // Get distinct Counties from data
-    let counties = [... new Set(evData.map(d => d.county))]
-    
-    // Append counties to dropdown
-    counties.forEach(county => {
-        countySelect.append("option").attr("value", county).text(county);
-    })
+function getIDS(yearSelect, countySelect){
 
     // Establish Year ID and County ID
     let yearID = yearSelect.property("value");
     let countyID = countySelect.property("value");
 
-    return yearID
+    yearID = parseInt(yearID)
+
+    return [yearID, countyID]
 
 }
 
-function yearChanged(){
+function yearChanged(evData){
 
+    evData = evData
     let yearID = d3.select("#selYear").property("value");
-    return yearID
+    let countyID = d3.select("#selCounty").property("value");
+    yearID = parseInt(yearID)
+    getData(evData, yearID, countyID)
+    
 }
 
-function countyChanged(){
-    let countyID = d3.select("selCounty").property("value");
-    return countyID
+function countyChanged(evData){
+    evData = evData
+    let yearID = d3.select("#selYear").property("value");
+    let countyID = d3.select("#selCounty").property("value");
+    yearID = parseInt(yearID)
+    getData(evData, yearID, countyID)
 }
     
 // function to change Y Axis Scale
@@ -204,10 +185,11 @@ function changeBar(barGroup, newYScale, chosenYAxis, height) {
 
 // Function to create barChart
 function barChart(barData){
-    // let svgWidth = parseInt(d3.select('bar').style('width'), 10);
+    //  let svgWidth = parseInt(d3.select('bar').style('width'), 10);
     // parseInt(d3.select('#my_dataviz').style('width'), 10)
     // let svgHeight = svgWidth / 3.236;
     // console.log(svgWidth)
+    d3.selectAll("svg").remove()
 
     let svgWidth = 1100;
     let svgHeight = 400;
@@ -227,6 +209,7 @@ function barChart(barData){
         .attr("height", svgHeight);
         // .attr("viewBox", `0 0 300 200`);
 
+    
 
     // Append an SVG group
     let chartGroup = svg.append("g")
@@ -290,6 +273,7 @@ function barChart(barData){
         // .attr("x", (d, i) => i * (barWidth + barSpacing))
         // .attr("y", d => height - d.registration * scaleY);
 
+
     // Setup tooltips
     changeToolTip(chosenYAxis, barGroup)
 
@@ -340,7 +324,7 @@ function barChart(barData){
     // updates y axis with transition
     yAxis = changeYAxes(yLinearScale, yAxis);
 
-    // updates circles with new y values
+    // updates bar with new y values
     barGroup = changeBar(barGroup, yLinearScale, chosenYAxis, height);
 
     // updates tooltips with new info
@@ -425,6 +409,7 @@ function pieChart(pieData, countyID, yearID){
         showlegend: false,
         // grid: {rows: 1, columns: 2}
         };
+
         
         Plotly.newPlot('pie', data, layout, {displayModeBar: false});
 };
