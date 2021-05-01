@@ -65,14 +65,25 @@ function getData(evData, yearID, countyID){
                                     income: filterData.find(d => d.county === county).income,
                                 };
                             });
+
+    let mapData = Array.from(new Set(filterData.map(d => d.county)))
+                            .map(county => {
+                                return {
+                                    year: filterData.find(d => d.county === county).year,
+                                    county: county,
+                                    stations: filterData.find(d => d.county === county).station_count,
+                                    population: filterData.find(d => d.county === county).population,
+                                    income: filterData.find(d => d.county === county).income,
+                                };
+                            });
     // console.log(filterData)
     // console.log(barData)
-    // console.log(pieData)
+    // console.log(mapData)
 
     // Run initial charts
     barChart(barData, yearID)
     pieChart(pieData, countyID, yearID)
-    // map()
+    map(mapData)
 }
 
 function getIDS(yearSelect, countySelect){
@@ -417,8 +428,9 @@ function pieChart(pieData, countyID, yearID){
     
     
 //Function to create Map
-function map(){
+function map(mapData){
     
+
         // Creating map object
         let myMap = L.map("map", {
             center: [28.0000, -83.7000],
@@ -437,7 +449,7 @@ function map(){
         
         // Use this link to get the geojson data.
         var link = "static/data/flo.geojson";
-        var link2 ="static/data/statplot.json";
+        // var link2 ="static/data/stations.json";
       
         // Function that will determine the color of a neighborhood based on the county it belongs to
         function chooseColor(county) {
@@ -487,9 +499,10 @@ function map(){
                 // Giving each feature a pop-up with information pertinent to it
                 layer.bindPopup("<h1>" + feature.properties.namelsad + "</h1> <hr> <h2>" + feature.properties.state_name + "</h2>");
         
-
+                // console.log(maData)
+                // console.log(mapData.county)
             //     d3.json(link2).then(function(response) {
-            //         var markers = L.markerClusterGroup();
+            //         var markers = L.marker();
             //         // Loop through data
             //         for (var i = 0; i < response.length; i++) {
             
