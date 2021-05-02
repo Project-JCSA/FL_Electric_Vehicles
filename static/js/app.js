@@ -72,16 +72,17 @@ function filterData(evData, yearID, countyID){
     
     let barData = Array.from(new Set(yearFilter.map(d => d.county)))
                             .map(county => {
-                                return {
-                                    year: yearFilter.find(d => d.county === county).year,
-                                    county: county,
-                                    registration: yearFilter.find(d => d.county === county).county_reg_count,
-                                    population: yearFilter.find(d => d.county === county).population,
-                                    income: yearFilter.find(d => d.county === county).income,
-                                };
+                                    return {
+                                        year: yearFilter.find(d => d.county === county).year,
+                                        county: county,
+                                        registration: yearFilter.find(d => d.county === county).county_reg_count,
+                                        population: yearFilter.find(d => d.county === county).population,
+                                        income: yearFilter.find(d => d.county === county).income,
+                                    };
                             });
 
-
+    barData = barData.filter(d => d["county"] != "All Counties")
+    
     let countyFilter = countyData.filter(d => d["county"] === countyID);
     let mapData = Array.from(new Set(countyFilter.map(d => d.county)))
                             .map(county => {
@@ -545,7 +546,7 @@ function map(mapData, stationData, countyID){
         });
     
         let stationGroup = new L.LayerGroup();
-        evMap.removeLayer(stationGroup);
+        // evMap.removeLayer(stationGroup);
 
         stationData.forEach(station => {
             let latitude = station.latitude;
