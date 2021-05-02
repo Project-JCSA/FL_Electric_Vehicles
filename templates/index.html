@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Florida's EVs</title>
+    <title id="title">Florida's EVs (^_^)</title>
 
      <!-- Bootstrap CSS -->
      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
@@ -20,15 +20,41 @@
 
     <!-- Our CSS -->
     <link rel="stylesheet" type="text/css" href="static/css/style.css">
+
+    <!-- JavaScript Library: IfVisable.js -->
+    <script src="static/js/ifvisible.js"></script>
+    <script type="text/javascript">
+        // Calculates idle time
+        function d(el){
+            return document.getElementById(el);
+        }
+
+        // Sets idle time before sleeping
+        ifvisible.setIdleDuration(6);
+
+        // Update page title on idle
+        ifvisible.idle(function(){
+            d("title").innerHTML = "Florida's EVs (-_-) Zzzz....";
+            document.body.style.opacity = 0.5;
+        });
+        // Update page title on wake up
+        ifvisible.wakeup(function(){
+            d("title").innerHTML = "Florida's EVs (O_o) You're back!";
+            document.body.style.opacity = 1;
+        });
+    </script>
+
+
+
 </head>
 <body>
-  <div class="jumbotron bg-cover text-white">
-    <div class="container text-center">
-        <h1 class="display-4 font-weight-bold">Florida Electric Vehicles</h1>
-        <p class="font-italic mb-0">Use the interactive charts below to explore the dataset</p>
-        <!-- <a href="#" role="button" class="btn btn-primary px-5">See All Features</a> -->
+    <div class="jumbotron bg-cover text-white">
+        <div class="container text-center">
+            <h1 class="display-4 font-weight-bold">Florida Electric Vehicles</h1>
+            <p class="font-italic mb-0">Use the interactive charts below to explore the dataset</p>
+            <!-- <a href="#" role="button" class="btn btn-primary px-5">See All Features</a> -->
+        </div>
     </div>
-  </div>
     <div class="container px-0">
         <div class="row">
             <div class="col-md-4">
@@ -41,7 +67,6 @@
                     <h5>Select County: <select id="selCounty" onchange="countyChanged(this.value)"></select></h5>
                 </div>
             </div>
-          
         </div>
         <div class="row">
             <div class="col-md-12">
@@ -66,10 +91,8 @@
               <li><a href="https://www.caranddriver.com/research/a32781943/electric-cars-vs-gas-cars">Electric Cars Vs. Gas Cars: Everything You Need to Know</a></li>
               <li><a href="https://ghgdata.epa.gov/ghgp/main.do#">EPA Emission Data</a></li>
             </ul>
-            
           </div>
         </div>
-
     </div>
 
     
@@ -97,7 +120,6 @@ crossorigin=""></script>
 <!-- <script type="text/javascript" src="static/js/bar.js"></script> -->
 <!-- <script type="text/javascript" src="static/js/pie.js"></script>
 <script type="text/javascript" src="static/js/flo_map.js"></script> -->
-
 
 </body>
 </html>
