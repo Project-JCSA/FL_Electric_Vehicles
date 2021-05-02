@@ -70,17 +70,23 @@ def sqlquery():
                                         ) s on c.county_id = s.county_id and y.year = s.year
                             ORDER BY county_id
                         ''', conn)
+    if conn:
+        conn.close()
+
     return Response(myData.to_json(orient="records", date_format="iso"), mimetype="application/json")
 
 @app.route("/stations")
-def sqlquery():
+def stations_sqlquery():
     conn = sqlite3.connect(db_path)
 
     myData = pd.read_sql('''SELECT s.year, c.county_id, c.county, s.station, s.latitude, s.longitude, s.street_address, s.open_date
                             FROM station s
                             LEFT JOIN county c on s.county_id = c.county_id
                             ORDER BY s.year, c.county_id
-                            ''', conn)
+                            ''', conn)                            
+    if conn:
+        conn.close()
+
     return Response(myData.to_json(orient="records", date_format="iso"), mimetype="application/json")
 
 if __name__ == "__main__":
