@@ -4,53 +4,132 @@ function init(){
     
     let countySelect = d3.select("#selCounty");
     
-    let datalink = "http://127.0.0.1:5000/data"
-    
-    d3.json(datalink).then(function(evData,err){
+    let dataLink = "http://127.0.0.1:5000/data"
+    let stationLink = "http://127.0.0.1:5000/stations"
+
+    let links = [dataLink,stationLink]
+
+
+    getData(dataLink, stationLink, yearSelect, countySelect)
+    // d3.json(dataLink).then(function(evData,err){
         
+        
+    //     if (err) throw err;
+    //     console.log(evData)
+    //     // Parse Data to make sure all are integers
+    //     evData.forEach(function(data){
+    //         data.population = parseInt(data.population);
+    //         data.income = parseInt(data.income)
+    //     });
     
-        if (err) throw err;
+    //     // // Get distinct Years from data
+    //     let years = [... new Set(evData.map(d => d.year))];
 
-        // Parse Data to make sure all are integers
-        evData.forEach(function(data){
-            data.population = parseInt(data.population);
-            data.income = parseInt(data.income)
-        });
-    
-        // // Get distinct Years from data
-        let years = [... new Set(evData.map(d => d.year))];
+    //     // // Append years to dropdown
+    //     years.forEach(year => {
+    //         yearSelect.append("option").attr("value", year).text(year);
+    //     })
 
-        // // Append years to dropdown
-        years.forEach(year => {
-            yearSelect.append("option").attr("value", year).text(year);
-        })
-
-        // // Get distinct Counties from data
-        let counties = [... new Set(evData.map(d => d.county))]
+    //     // // Get distinct Counties from data
+    //     let counties = [... new Set(evData.map(d => d.county))]
             
-        // // Append counties to dropdown
-        counties.forEach(county => {
-            countySelect.append("option").attr("value", county).text(county);
-        })
+    //     // // Append counties to dropdown
+    //     counties.forEach(county => {
+    //         countySelect.append("option").attr("value", county).text(county);
+    //     })
 
-        // // Establish Year ID and County ID
-        yearID = getIDS(yearSelect, countySelect)[0];
-        countyID = getIDS(yearSelect, countySelect)[1];
+    //     // // Establish Year ID and County ID
+    //     yearID = getIDS(yearSelect, countySelect)[0];
+    //     countyID = getIDS(yearSelect, countySelect)[1];
 
-        getData(evData, yearID, countyID)
+    //     getData(evData, yearID, countyID)
 
 
-        yearSelect.on("change", () => yearChanged(evData));
-        countySelect.on("change", () => countyChanged(evData));
+    //     yearSelect.on("change", () => yearChanged(evData));
+    //     countySelect.on("change", () => countyChanged(evData));
         
     
-    });
+    // });
     
 };
 
-function getData(evData, yearID, countyID){
+function getData(dataLink, stationLink, yearSelect, countySelect){
+    // Promise.all(links.map(d => d3.json(d))).then((alldata) => {
+    //     alldata.forEach(data => {
+    //         // console.log(alldata)
+    //       data.forEach(e => {
+    //         var obj = {
+    //           Title: dataDesc,
+    //           Value: e
+    //         }
+    //         selectedData.push(obj);
+    //       });
+    //     });
+    //   }).then(callback)
+
+    //   Promise.all([
+    //     csv('/data/stations.csv'),
+    //     json('data/svg_data.json')
+    //   ])
+    //   .then(([stations, svg]) =>  {
+    //     // Do your stuff. Content of both files is now available in stations and svg
+    //   });
+
+    Promise.all([
+        fetch(dataLink),
+        fetch(stationLink)
+    ]).then(function (responses) {
+        // Get a JSON object from each of the responses
+        return Promise.all(responses.map(function (response) {
+            return response.json();
+        }));
+        }).then(function (evData) {
+            // Log the data to the console
+            // You would do something with both sets of data here
+           
+            // // Get distinct Years from data
+            let years = [... new Set(evData[0].map(d => d.year))];
+            // // Append years to dropdown
+            years.forEach(year => {
+                yearSelect.append("option").attr("value", year).text(year);
+            })
+
+            // // Get distinct Counties from data
+            let counties = [... new Set(evData[0].map(d => d.county))]
+                
+            // // Append counties to dropdown
+            counties.forEach(county => {
+                countySelect.append("option").attr("value", county).text(county);
+            })
+
+            // // Establish Year ID and County ID
+            yearID = getIDS(yearSelect, countySelect)[0];
+            countyID = getIDS(yearSelect, countySelect)[1];
+
+            filterData(evData, yearID, countyID)
+
+
+            yearSelect.on("change", () => yearChanged(evData));
+            countySelect.on("change", () => countyChanged(evData));
+        }).catch(function (error) {
+        // if there's an error, log it
+        console.log(error);
+    });
+};
+
+
+
+function filterData(evData, yearID, countyID){
+
+    let countyData = evData[0]
+    let stationData = evData[1]
+
+    // console.log(countyData)
+    console.log(stationData)
+    console.log(countyID)
     // Filter and Sort Metadata
-    let filterData = evData.filter(d => d["year"] === yearID);
+    
+    let filterData = countyData.filter(d => d["year"] === yearID);
 
     // Establish variabls for charts
     let pieData = filterData.filter(d => d["county"] === countyID);
@@ -77,13 +156,13 @@ function getData(evData, yearID, countyID){
                                 };
                             });
     // console.log(filterData)
-    // console.log(barData)
-    // console.log(mapData)
+    console.log(barData)
+    console.log(pieData)
 
     // Run initial charts
     barChart(barData, yearID)
     pieChart(pieData, countyID, yearID)
-    map(mapData)
+    // map(mapData)
 }
 
 function getIDS(yearSelect, countySelect){
@@ -104,7 +183,7 @@ function yearChanged(evData){
     let yearID = d3.select("#selYear").property("value");
     let countyID = d3.select("#selCounty").property("value");
     yearID = parseInt(yearID)
-    getData(evData, yearID, countyID)
+    filterData(evData, yearID, countyID)
     
 }
 
@@ -113,14 +192,14 @@ function countyChanged(evData){
     let yearID = d3.select("#selYear").property("value");
     let countyID = d3.select("#selCounty").property("value");
     yearID = parseInt(yearID)
-    getData(evData, yearID, countyID)
+    filterData(evData, yearID, countyID)
 }
     
 // function to change Y Axis Scale
 function yScale(barData, chosenYAxis, height) {
     // create scales
     let yScale = d3.scaleLinear()
-        .domain([0, d3.max(barData, d => d[chosenYAxis]) + 10])
+        .domain([0, d3.max(barData, d => d[chosenYAxis])])
         .range([height, 0]);
     
     return yScale;
@@ -460,6 +539,8 @@ function map(mapData){
         }
       
         // Grabbing our GeoJSON data..
+        let countyBoundary = new L.LayerGroup();
+
         d3.json(link).then(function(data) {
             // Creating a geoJSON layer with the retrieved data
             L.geoJson(data, {
@@ -497,8 +578,29 @@ function map(mapData){
                 }
                 });
                 // Giving each feature a pop-up with information pertinent to it
-                layer.bindPopup("<h1>" + feature.properties.namelsad + "</h1> <hr> <h2>" + feature.properties.state_name + "</h2>");
-        
+                layer.bindPopup("<h1>" + feature.properties.namelsad + "</h1> <hr> <h2>" + feature.properties.state_name + "</h2>").addTo(countyBoundary);
+            }
+    
+        });
+        });
+    
+    let stations = new L.LayerGroup();
+
+    d3.json(datalink).then(function(mapData) {
+        mapData = mapData.features
+        mapData.forEach(station => {
+            let latitude = mapData.geometry.coordinates[1];
+            let longitude = mapData.geometry.coordinates[0];
+            let StreetAddress = mapData.StreetAddress;
+            let name = mapData.StationName;
+            let opendate = mapData.OpenDate;
+        // console.log(mapData);
+            L.marker([latitude,longitude]
+                ).bindPopup("<h3>" + station.StationName + "<h3><h3>Capacity: " + station.StreetAddress + "</h3>" + station.OpenDate + "</h3>").addTo(stations)
+    
+        })
+    });
+
                 // console.log(maData)
                 // console.log(mapData.county)
             //     d3.json(link2).then(function(response) {
@@ -522,11 +624,8 @@ function map(mapData){
             //         // Add our marker cluster layer to the map
             //         myMap.addLayer(markers);
             // })
-            }
-        }).addTo(myMap);
-    
-    });
+            
+
+
 }
-
-
 init()
