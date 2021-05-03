@@ -474,33 +474,17 @@ function map(barData, stationData, countyID){
         })
         
       
-        // Function that will determine the color of a neighborhood based on the county it belongs to
-        function chooseColor(county) {
-            switch (county) {
-            default:
-            return "#6699FF";
-            }
-        }
-      
         // Grabbing our GeoJSON data..
         let countyBoundary = new L.LayerGroup();
 
-        // evMap.removeLayer(countyBoundary);
-        // console.log(barData.county)
+        let geojson;
 
         d3.json(link).then(function(data) {
             // Creating a geoJSON layer with the retrieved data
-            L.geoJson(data, {
+            // console.log(data)
+            L.choropleth(data, {
             // Style each feature (in this case a neighborhood)
-            // update: function(feature){
-            //     let county = feature.properties.name
-            //         barData.forEach(d => {
-            //             if(d["county"] === county){
-            //                 feature.properties.population = 1000000
-            //             }
-            //         })
-            // },
-            // Called on each feature
+            
             onEachFeature: function(feature, layer) {
                 // Set mouse events to change map styling
                 barData.forEach(d => {
@@ -510,62 +494,60 @@ function map(barData, stationData, countyID){
                         feature.properties.income = d["income"]
                     }
                 })
-                layer.on({
-                // When a user's mouse touches a map feature, the mouseover event calls this function, that feature's opacity changes to 90% so that it stands out
-                mouseover: function(event) {
-                    layer = event.target;
-                    layer.setStyle({
-                    fillOpacity: .8
-                    });
-                },
-                // When the cursor no longer hovers over a map feature - when the mouseout event occurs - the feature's opacity reverts back to 50%
-                mouseout: function(event) {
-                    layer = event.target;
-                    layer.setStyle({
-                    fillOpacity: 0.5
-                    });
-                },
-                // When a feature (neighborhood) is clicked, it is enlarged to fit the screen
-                click: function(event) {
-                    evMap.fitBounds(event.target.getBounds());
-                }
-
-
-                });
-                // Giving each feature a pop-up with information pertinent to it
-                layer.bindPopup(`<h4> ${feature.properties.namelsad}</h4> <hr> <p>Population: ${feature.properties.population}</p> 
-                                <p>EV Registration: ${feature.properties.registration}</p>
-                                <p>Income: ${feature.properties.income}</p>`).addTo(countyBoundary);
                 
             },
-            style: function(feature) {
-                return {
-                color: "black",
-                // Call the chooseColor function to decide which color to color our neighborhood (color based on county)
-                fillColor: chooseColor(feature.properties.county),
-                fillOpacity: 0.5,
-                weight: 1.0
-                };
-            },
-
-            // filter: function(feature) { return feature.properties.county == countyID },
-
-
-
-            // for (var team in teams) {
-            //     var teamLayer = L.geoJson(data, {
-            //       filter: function(feat) { return feat.properties.team === team; }
-            //     });
-            //     var teamName = 'Team ' + team;
-            //     allTeams.addLayer(teamLayer);
-            //     teamLayers[ teamName ] = teamLayer;
-            //  }
              
             //  L.control.layers(teamLayers).addTo(map);
-
         })
-        });
+            geojson = L.choropleth(data, {
+                valueProperty: "registration",
+            
+
+                // Set color scale
+                scale: ["#ADD8E6", "#0000FF"],
+
+                // Number of breaks in step range
+                steps: 5,
+
+                // q for quartile, e for equidistant, k for k-means
+                mode: "e",
+                style: {
+                // Border color
+                color: "#fff",
+                weight: 1,
+                fillOpacity: 0.6
+                },
+                onEachFeature: function(feature, layer) {
+                layer.on({
+                    // When a user's mouse touches a map feature, the mouseover event calls this function, that feature's opacity changes to 90% so that it stands out
+                    mouseover: function(event) {
+                        layer = event.target;
+                        layer.setStyle({
+                        fillOpacity: .8
+                        });
+                    },
+                    // When the cursor no longer hovers over a map feature - when the mouseout event occurs - the feature's opacity reverts back to 50%
+                    mouseout: function(event) {
+                        layer = event.target;
+                        layer.setStyle({
+                        fillOpacity: 0.5
+                        });
+                    },
+                    // When a feature (neighborhood) is clicked, it is enlarged to fit the screen
+                    click: function(event) {
+                        evMap.fitBounds(event.target.getBounds());
+                    }
     
+                    });
+                    // Giving each feature a pop-up with information pertinent to it
+                    layer.bindPopup(`<h4> ${feature.properties.namelsad}</h4> <hr> <p>Population: ${feature.properties.population}</p> 
+                                    <p>EV Registration: ${feature.properties.registration}</p>
+                                    <p>Income: ${feature.properties.income}</p>`).addTo(countyBoundary);
+                }
+            })
+        });
+
+        console.log(geojson)
         let stationGroup = new L.LayerGroup();
         // evMap.removeLayer(stationGroup);
 
