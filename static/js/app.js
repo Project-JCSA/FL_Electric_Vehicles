@@ -50,6 +50,8 @@ function getData(dataLink, stationLink, yearSelect, countySelect){
 
             yearSelect.on("change", () => yearChanged(evData));
             countySelect.on("change", () => countyChanged(evData));
+
+
         }).catch(function (error) {
         // if there's an error, log it
         console.log(error);
@@ -83,22 +85,22 @@ function filterData(evData, yearID, countyID){
 
     barData = barData.filter(d => d["county"] != "All Counties")
     
-    let countyFilter = countyData.filter(d => d["county"] === countyID);
-    let mapData = Array.from(new Set(countyFilter.map(d => d.county)))
-                            .map(county => {
-                                return {
-                                    year: countyFilter.find(d => d.county === county).year,
-                                    county: county,
-                                    registration: yearFilter.find(d => d.county === county).county_reg_count,
-                                    population: yearFilter.find(d => d.county === county).population,
-                                    income: yearFilter.find(d => d.county === county).income,
-                                };
-                            });
+    // let countyFilter = countyData.filter(d => d["county"] === countyID);
+    // let mapData = Array.from(new Set(countyFilter.map(d => d.county)))
+    //                         .map(county => {
+    //                             return {
+    //                                 year: countyFilter.find(d => d.county === county).year,
+    //                                 county: county,
+    //                                 registration: yearFilter.find(d => d.county === county).county_reg_count,
+    //                                 population: yearFilter.find(d => d.county === county).population,
+    //                                 income: yearFilter.find(d => d.county === county).income,
+    //                             };
+    //                         });
 
     // Run initial charts
     barChart(barData, yearID)
     pieChart(pieData, countyID, yearID)
-    map(mapData, stationData, countyID)
+    map(barData, stationData, countyID)
 }
 
 function getIDS(yearSelect, countySelect){
@@ -441,9 +443,8 @@ function pieChart(pieData, countyID, yearID){
 };
     
     
-    
 //Function to create Map
-function map(mapData, stationData, countyID){
+function map(barData, stationData, countyID){
 
     
     // let evMap = L.map("map", {
@@ -485,26 +486,30 @@ function map(mapData, stationData, countyID){
         let countyBoundary = new L.LayerGroup();
 
         // evMap.removeLayer(countyBoundary);
+        // console.log(barData.county)
 
         d3.json(link).then(function(data) {
             // Creating a geoJSON layer with the retrieved data
             L.geoJson(data, {
             // Style each feature (in this case a neighborhood)
-            style: function(feature) {
-                return {
-                color: "black",
-                // Call the chooseColor function to decide which color to color our neighborhood (color based on county)
-                fillColor: chooseColor(feature.properties.county),
-                fillOpacity: 0.5,
-                weight: 1.0
-                };
-            },
-
-            // filter: function(feature) { return feature.properties.county == countyID },
-
+            // update: function(feature){
+            //     let county = feature.properties.name
+            //         barData.forEach(d => {
+            //             if(d["county"] === county){
+            //                 feature.properties.population = 1000000
+            //             }
+            //         })
+            // },
             // Called on each feature
             onEachFeature: function(feature, layer) {
                 // Set mouse events to change map styling
+                barData.forEach(d => {
+                    if(d["county"] === feature.properties.name){
+                        feature.properties.population = d["population"]
+                        feature.properties.registration = d["registration"]
+                        feature.properties.income = d["income"]
+                    }
+                })
                 layer.on({
                 // When a user's mouse touches a map feature, the mouseover event calls this function, that feature's opacity changes to 90% so that it stands out
                 mouseover: function(event) {
@@ -525,11 +530,27 @@ function map(mapData, stationData, countyID){
                     evMap.fitBounds(event.target.getBounds());
                 }
 
+
                 });
                 // Giving each feature a pop-up with information pertinent to it
-                layer.bindPopup("<h1>" + feature.properties.namelsad + "</h1> <hr> <h2>" + feature.properties.state_name + "</h2>").addTo(countyBoundary);
-            }
-    
+                layer.bindPopup(`<h4> ${feature.properties.namelsad}</h4> <hr> <p>Population: ${feature.properties.population}</p> 
+                                <p>EV Registration: ${feature.properties.registration}</p>
+                                <p>Income: ${feature.properties.income}</p>`).addTo(countyBoundary);
+                
+            },
+            style: function(feature) {
+                return {
+                color: "black",
+                // Call the chooseColor function to decide which color to color our neighborhood (color based on county)
+                fillColor: chooseColor(feature.properties.county),
+                fillOpacity: 0.5,
+                weight: 1.0
+                };
+            },
+
+            // filter: function(feature) { return feature.properties.county == countyID },
+
+
 
             // for (var team in teams) {
             //     var teamLayer = L.geoJson(data, {
