@@ -477,7 +477,6 @@ function map(barData, stationData, countyID){
         // Grabbing our GeoJSON data..
         let countyBoundary = new L.LayerGroup();
 
-        let geojson;
 
         d3.json(link).then(function(data) {
             // Creating a geoJSON layer with the retrieved data
@@ -492,14 +491,13 @@ function map(barData, stationData, countyID){
                         feature.properties.population = d["population"]
                         feature.properties.registration = d["registration"]
                         feature.properties.income = d["income"]
-                    }
-                })
-                
-            },
-             
-            //  L.control.layers(teamLayers).addTo(map);
-        })
-            geojson = L.choropleth(data, {
+                        }
+                    })
+                },
+            })
+            let geojson = L.choropleth(data, {
+
+                // Define what  property in the features to use
                 valueProperty: "registration",
             
 
@@ -545,9 +543,36 @@ function map(barData, stationData, countyID){
                                     <p>Income: ${feature.properties.income}</p>`).addTo(countyBoundary);
                 }
             })
+
+            // Set up the legend
+            let legend = L.control({ position: "bottomleft" });
+            legend.onAdd = function() {
+                var div = L.DomUtil.create("div", "info legend");
+                var limits = geojson.options.limits;
+                var colors = geojson.options.colors;
+                var labels = [];
+
+                // Add min & max
+                let legendInfo = "<h1>EV Registrations</h1>" +
+                "<div class=\"labels\">" +
+                    "<div class=\"min\">" + limits[0] + "</div>" +
+                    "<div class=\"max\">" + limits[limits.length - 1] + "</div>" +
+                "</div>";
+
+                div.innerHTML = legendInfo;
+
+                limits.forEach(function(limit, index) {
+                labels.push("<li style=\"background-color: " + colors[index] + "\"></li>");
+                });
+
+                div.innerHTML += "<ul>" + labels.join("") + "</ul>";
+                return div;
+            };
+
+            // Adding legend to the map
+            legend.addTo(evMap);
         });
 
-        console.log(geojson)
         let stationGroup = new L.LayerGroup();
         // evMap.removeLayer(stationGroup);
 
@@ -578,6 +603,7 @@ function map(barData, stationData, countyID){
         });
 
         L.control.layers(baseMaps, overlayMaps).addTo(evMap);
+        // legend.addTo(evMap);
          
         // map.removeLayer(L.geoJson);
 
