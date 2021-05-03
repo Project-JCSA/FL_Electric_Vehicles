@@ -59,7 +59,6 @@ function getData(dataLink, stationLink, yearSelect, countySelect){
 };
 
 
-
 function filterData(evData, yearID, countyID){
 
     let countyData = evData[0];
@@ -84,21 +83,9 @@ function filterData(evData, yearID, countyID){
                             });
 
     barData = barData.filter(d => d["county"] != "All Counties")
-    
-    // let countyFilter = countyData.filter(d => d["county"] === countyID);
-    // let mapData = Array.from(new Set(countyFilter.map(d => d.county)))
-    //                         .map(county => {
-    //                             return {
-    //                                 year: countyFilter.find(d => d.county === county).year,
-    //                                 county: county,
-    //                                 registration: yearFilter.find(d => d.county === county).county_reg_count,
-    //                                 population: yearFilter.find(d => d.county === county).population,
-    //                                 income: yearFilter.find(d => d.county === county).income,
-    //                             };
-    //                         });
 
     // Run initial charts
-    barChart(barData, yearID)
+    barChart(barData)
     pieChart(pieData, countyID, yearID)
     map(barData, stationData, countyID)
 }
@@ -260,9 +247,6 @@ function barChart(barData){
 
     // set yLinearScale
     let yLinearScale = yScale(barData, chosenYAxis, height);
-    // let yScale = d3.scaleLinear()
-    //     .domain([0, d3.max(barData, d => d[chosenYAxis]) + 2])
-    //     .range([height, 0]);
 
     
     // create initial axis
@@ -398,7 +382,6 @@ function barChart(barData){
 }
 
 
-
 // Function to create PieChart
 function pieChart(pieData, countyID, yearID){
     // Isolate values and labels for chart
@@ -442,175 +425,164 @@ function pieChart(pieData, countyID, yearID){
         Plotly.newPlot('pie', data, layout, {displayModeBar: false});
 };
     
-    
+
+
 //Function to create Map
 function map(barData, stationData, countyID){
 
-    
-    // let evMap = L.map("map", {
-    //     center: [28.0000, -83.7000],
-    //     zoom: 7
-    // });
+
     
     // Use this link to get the geojson data.
     let link = "static/data/flo.geojson";
 
-        // Adding tile layer
-        let streetMap = new L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
-            attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
-            tileSize: 512,
-            maxZoom: 18,
-            zoomOffset: -1,
-            id: "mapbox/streets-v11",
-            accessToken: API_KEY
-        })//.addTo(myMap);
-        let satelliteeMap = new L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
-            attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
-            tileSize: 512,
-            maxZoom: 18,
-            zoomOffset: -1,
-            id: "mapbox/satellite-v9",
-            accessToken: API_KEY
-        })
+    // Adding tile layer
+    let streetMap = new L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
+        tileSize: 512,
+        maxZoom: 18,
+        zoomOffset: -1,
+        id: "mapbox/streets-v11",
+        accessToken: API_KEY
+    })//.addTo(myMap);
+    let satelliteeMap = new L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
+        tileSize: 512,
+        maxZoom: 18,
+        zoomOffset: -1,
+        id: "mapbox/satellite-v9",
+        accessToken: API_KEY
+    })
         
       
-        // Grabbing our GeoJSON data..
-        let countyBoundary = new L.LayerGroup();
+    // Grabbing our GeoJSON data..
+    let countyBoundary = new L.LayerGroup();
 
+    // countyBoundary.clearLayers()
 
-        d3.json(link).then(function(data) {
-            // Creating a geoJSON layer with the retrieved data
-            // console.log(data)
-            L.choropleth(data, {
-            // Style each feature (in this case a neighborhood)
-            
-            onEachFeature: function(feature, layer) {
-                // Set mouse events to change map styling
-                barData.forEach(d => {
-                    if(d["county"] === feature.properties.name){
-                        feature.properties.population = d["population"]
-                        feature.properties.registration = d["registration"]
-                        feature.properties.income = d["income"]
-                        }
-                    })
-                },
-            })
-            let geojson = L.choropleth(data, {
-
-                // Define what  property in the features to use
-                valueProperty: "registration",
-            
-
-                // Set color scale
-                scale: ["#ADD8E6", "#0000FF"],
-
-                // Number of breaks in step range
-                steps: 5,
-
-                // q for quartile, e for equidistant, k for k-means
-                mode: "e",
-                style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.6
-                },
-                onEachFeature: function(feature, layer) {
-                layer.on({
-                    // When a user's mouse touches a map feature, the mouseover event calls this function, that feature's opacity changes to 90% so that it stands out
-                    mouseover: function(event) {
-                        layer = event.target;
-                        layer.setStyle({
-                        fillOpacity: .8
-                        });
-                    },
-                    // When the cursor no longer hovers over a map feature - when the mouseout event occurs - the feature's opacity reverts back to 50%
-                    mouseout: function(event) {
-                        layer = event.target;
-                        layer.setStyle({
-                        fillOpacity: 0.5
-                        });
-                    },
-                    // When a feature (neighborhood) is clicked, it is enlarged to fit the screen
-                    click: function(event) {
-                        evMap.fitBounds(event.target.getBounds());
-                    }
-    
-                    });
-                    // Giving each feature a pop-up with information pertinent to it
-                    layer.bindPopup(`<h4> ${feature.properties.namelsad}</h4> <hr> <p>Population: ${feature.properties.population}</p> 
-                                    <p>EV Registration: ${feature.properties.registration}</p>
-                                    <p>Income: ${feature.properties.income}</p>`).addTo(countyBoundary);
-                }
-            })
-
-            // Set up the legend
-            let legend = L.control({ position: "bottomleft" });
-            legend.onAdd = function() {
-                var div = L.DomUtil.create("div", "info legend");
-                var limits = geojson.options.limits;
-                var colors = geojson.options.colors;
-                var labels = [];
-
-                // Add min & max
-                let legendInfo = "<h1>EV Registrations</h1>" +
-                "<div class=\"labels\">" +
-                    "<div class=\"min\">" + limits[0] + "</div>" +
-                    "<div class=\"max\">" + limits[limits.length - 1] + "</div>" +
-                "</div>";
-
-                div.innerHTML = legendInfo;
-
-                limits.forEach(function(limit, index) {
-                labels.push("<li style=\"background-color: " + colors[index] + "\"></li>");
-                });
-
-                div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-                return div;
-            };
-
-            // Adding legend to the map
-            legend.addTo(evMap);
-        });
-
-        let stationGroup = new L.LayerGroup();
-        // evMap.removeLayer(stationGroup);
-
-        stationData.forEach(station => {
-            let latitude = station.latitude;
-            let longitude = station.longitude;
-
-            L.marker([latitude,longitude])
-            .bindPopup(`<h5> ${station.station}</h5> <hr> Address: ${station.street_address}`).addTo(stationGroup)
+    d3.json(link).then(function(data) {
+        // Creating a geoJSON layer with the retrieved data
+        // console.log(data)
+        L.choropleth(data, {
+        // Style each feature (in this case a neighborhood)
         
-        });
+        onEachFeature: function(feature, layer) {
+            // Set mouse events to change map styling
+            barData.forEach(d => {
+                if(d["county"] === feature.properties.name){
+                    feature.properties.population = d["population"]
+                    feature.properties.registration = d["registration"]
+                    feature.properties.income = d["income"]
+                    }
+                })
+            },
+        })
+        let geojson = L.choropleth(data, {
+
+            // Define what  property in the features to use
+            valueProperty: "registration",
+        
+
+            // Set color scale
+            scale: ["#ADD8E6", "#0000FF"],
+
+            // Number of breaks in step range
+            steps: 5,
+
+            // q for quartile, e for equidistant, k for k-means
+            mode: "e",
+            style: {
+            // Border color
+            color: "#fff",
+            weight: 1,
+            fillOpacity: 0.6
+            },
+            onEachFeature: function(feature, layer) {
+            layer.on({
+                // When a user's mouse touches a map feature, the mouseover event calls this function, that feature's opacity changes to 90% so that it stands out
+                mouseover: function(event) {
+                    layer = event.target;
+                    layer.setStyle({
+                    fillOpacity: .8
+                    });
+                },
+                // When the cursor no longer hovers over a map feature - when the mouseout event occurs - the feature's opacity reverts back to 50%
+                mouseout: function(event) {
+                    layer = event.target;
+                    layer.setStyle({
+                    fillOpacity: 0.5
+                    });
+                },
+                // When a feature (neighborhood) is clicked, it is enlarged to fit the screen
+                click: function(event) {
+                    evMap.fitBounds(event.target.getBounds());
+                }
+
+                });
+                // Giving each feature a pop-up with information pertinent to it
+                layer.bindPopup(`<h4> ${feature.properties.namelsad}</h4> <hr> <p>Population: ${feature.properties.population}</p> 
+                                <p>EV Registration: ${feature.properties.registration}</p>
+                                <p>Income: ${feature.properties.income}</p>`).addTo(countyBoundary);
+            }
+        })
+
+        // Set up the legend
+        let legend = L.control({ position: "bottomleft" });
+        legend.onAdd = function() {
+            var div = L.DomUtil.create("div", "info legend");
+            var limits = geojson.options.limits;
+            var colors = geojson.options.colors;
+            var labels = [];
+
+            // Add min & max
+            let legendInfo = "<h4>EV Registrations</h4>" +
+            "<div class=\"labels\">" +
+                "<div class=\"min\">" + limits[0] + "</div>" +
+                "<div class=\"max\">" + limits[limits.length - 1] + "</div>" +
+            "</div>";
+
+            div.innerHTML = legendInfo;
+
+            limits.forEach(function(limit, index) {
+            labels.push("<li style=\"background-color: " + colors[index] + "\"></li>");
+            });
+
+            div.innerHTML += "<ul>" + labels.join("") + "</ul>";
+            return div;
+        };
+
+        // Adding legend to the map
+        legend.addTo(evMap);
+    });
+
+    let stationGroup = new L.LayerGroup();
+
+    stationData.forEach(station => {
+        let latitude = station.latitude;
+        let longitude = station.longitude;
+
+        L.marker([latitude,longitude])
+        .bindPopup(`<h5> ${station.station}</h5> <hr> Address: ${station.street_address}`).addTo(stationGroup)
     
+    });
 
-        let baseMaps = {
-            Street: streetMap,
-            Satellite: satelliteeMap
-        };
 
-        let overlayMaps = {
-            "Counties" : countyBoundary,
-            "Stations" : stationGroup
-        };
+    let baseMaps = {
+        Street: streetMap,
+        Satellite: satelliteeMap
+    };
 
-        let evMap = L.map("map", {
-            center: [28.0000, -83.7000],
-            zoom: 7,
-            layers: [streetMap, countyBoundary, stationGroup]
-        });
+    let overlayMaps = {
+        "Counties" : countyBoundary,
+        "Stations" : stationGroup
+    };
 
-        L.control.layers(baseMaps, overlayMaps).addTo(evMap);
-        // legend.addTo(evMap);
-         
-        // map.removeLayer(L.geoJson);
+    let evMap = L.map("map", {
+        center: [28.0000, -83.7000],
+        zoom: 7,
+        layers: [streetMap, countyBoundary, stationGroup]
+    });
 
-        // var geojson = L.geoJson(campus, {
-        //     style: style,
-        //      onEachFeature: onEachFeature
-        // }).addTo(map);
+    L.control.layers(baseMaps, overlayMaps).addTo(evMap);
 
 };
 
