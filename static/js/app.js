@@ -1,12 +1,11 @@
+let dataLink = "http://127.0.0.1:5000/data"
+let stationLink = "http://127.0.0.1:5000/stations"
+
 function init(){
     
     let yearSelect = d3.select("#selYear");
     
     let countySelect = d3.select("#selCounty");
-    
-    let dataLink = "http://127.0.0.1:5000/data"
-    let stationLink = "http://127.0.0.1:5000/stations"
-
 
     getData(dataLink, stationLink, yearSelect, countySelect)
 
@@ -48,8 +47,8 @@ function getData(dataLink, stationLink, yearSelect, countySelect){
 
             filterData(evData, yearID, countyID)
 
-            yearSelect.on("change", () => yearChanged(evData));
-            countySelect.on("change", () => countyChanged(evData));
+            // yearSelect.on("change", () => eventChanged(evData));
+            // countySelect.on("change", () => eventChanged(evData));
 
 
         }).catch(function (error) {
@@ -65,7 +64,7 @@ function filterData(evData, yearID, countyID){
     let stationData = evData[1];
 
     // Filter and Sort Metadata
-    
+    console.log(countyData)
     let yearFilter = countyData.filter(d => d["year"] === yearID);
 
     // Establish variabls for charts
@@ -91,6 +90,7 @@ function filterData(evData, yearID, countyID){
 }
 
 function getIDS(yearSelect, countySelect){
+    console.log("get Ids called")
 
     // Establish Year ID and County ID
     let yearID = yearSelect.property("value");
@@ -102,23 +102,22 @@ function getIDS(yearSelect, countySelect){
 
 }
 
-function yearChanged(evData){
+function eventChanged(){
 
-    evData = evData
-    let yearID = d3.select("#selYear").property("value");
-    let countyID = d3.select("#selCounty").property("value");
-    yearID = parseInt(yearID)
-    filterData(evData, yearID, countyID)
+    let yearSelect = d3.select("#selYear");
+    let countySelect = d3.select("#selCounty");
+    
+    getData(dataLink, stationLink, yearSelect, countySelect);
     
 }
 
-function countyChanged(evData){
-    evData = evData
-    let yearID = d3.select("#selYear").property("value");
-    let countyID = d3.select("#selCounty").property("value");
-    yearID = parseInt(yearID)
-    filterData(evData, yearID, countyID)
-}
+// function countyChanged(evData){
+//     evData = evData
+//     let yearID = d3.select("#selYear").property("value");
+//     let countyID = d3.select("#selCounty").property("value");
+//     yearID = parseInt(yearID)
+//     filterData(evData, yearID, countyID)
+// }
     
 // function to change Y Axis Scale
 function yScale(barData, chosenYAxis, height) {
@@ -586,5 +585,8 @@ function map(barData, stationData, countyID){
 
 };
 
+
+d3.select("#selYear").on("change", () => eventChanged());
+d3.select("#selCounty").on("change", () => eventChanged());
 
 init()
