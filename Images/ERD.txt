@@ -23,3 +23,14 @@ county_ID INT PK FK >- county.county_ID
 year INT PK
 report_date DATE
 reg_ct INT
+
+station
+----
+station_id INT PK
+county_id INT PK FK >- county.county_ID
+year INT
+station TEXT
+street_address TEXT
+latitude FLOAT
+longitude FLOAT
+open_date DATETIME

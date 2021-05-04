@@ -115,34 +115,40 @@ try:
 
     #combine Stations & counties Df into one 
     combined_df = pd.merge(stat_df, zip_df, on='ZIP')
-    combined_df.sort_values('COUNTYNAME')
-
-    #create a shorter datafram for the last two years of stations
-    combined_df = combined_df[(combined_df['Open Date']>= "2018-01-01") & (combined_df['Open Date']<= "2020-12-31")]
-    two_years_df = combined_df.sort_values('COUNTYNAME')
-    two_years_df = two_years_df.rename(columns={'COUNTYNAME':'county'})
-
-    # Find station count per year per county
-    county_stations_df = pd.DataFrame()
+    combined_df = combined_df.rename(columns={'COUNTYNAME':'county'})
+ 
+   # Find station count per year per county
+    stations_df = pd.DataFrame()
     year_ls = [2018,2019,2020]
     for year in year_ls:
         start_date = f'{year}-01-01'
         end_date = f'{year}-12-31'
 
-        df = two_years_df[(two_years_df['Open Date']>= start_date) & (two_years_df['Open Date']<= end_date)]
-        df = df.groupby('county')['Station Name'].count().reset_index().rename(columns={'Station Name':'station_count'})
+        df = combined_df[(combined_df['Open Date']>= start_date) & (combined_df['Open Date']<= end_date)]
         df['year'] = year
         
-        county_stations_df = county_stations_df.append(df, ignore_index=True)
+        stations_df = stations_df.append(df, ignore_index=True)
 
-    county_stations_df['county'] = county_stations_df['county'].map(lambda x: x.replace(' County',''))
+    # Clean up county names and bring in county_id
+    stations_df['county'] = stations_df['county'].map(lambda x: x.replace(' County',''))    
+    stations_df = stations_df.merge(county_df, on='county')
 
-     # Check for unmatched counties
-    for county in county_stations_df['county'].unique():
+    # Check for unmatched counties
+    for county in stations_df['county'].unique():
         if county in county_ls:
             pass
         else:
             print(county)
+
+    # Reset index to create stations_id
+    stations_df = stations_df.reset_index()
+
+    # Rename columns
+    stations_df = stations_df.rename(columns={'index':'station_id','Station Name':'station','Street Address':'street_address'
+                                                ,'Latitude':'latitude','Longitude':'longitude','Open Date':'open_date',})
+
+    # Remove unecessary columns
+    stations_df = stations_df[['station_id','county_id','year','station','street_address','latitude','longitude','open_date']]
     
 except Error as e:
     print(e)
@@ -328,20 +334,8 @@ try:
         else:
             print(county)
 
-    # Combine census & station data and bring in county id
-    demo_df = pd.DataFrame()
-    for year in year_ls:
-        df = county_df
-        df['year'] = year
-        demo_df = demo_df.append(df,ignore_index=True)
-
-    demo_df = demo_df.astype({'county': 'str','year':'str'})
-    fl_combined_demo = fl_combined_demo.astype({'county': 'str','year':'str'})
-    county_stations_df = county_stations_df.astype({'county': 'str','year':'str'})
-
-    demo_df = demo_df.merge(fl_combined_demo, how='left', on=['county','year'], suffixes=('','_x'))
-    demo_df = demo_df.merge(county_stations_df, how='left', on=['county','year'], suffixes=('','_y'))
-    demo_df = demo_df[['county_id','year','population','income','station_count']]
+    demo_df = county_df.merge(fl_combined_demo, how='inner', on=['county'], suffixes=('','_x'))
+    demo_df = demo_df[['county_id','year','population','income']]
 
 except Error as e:
     print(e)
@@ -358,40 +352,88 @@ try:
     cursor.execute("DROP TABLE IF EXISTS demographic")
     cursor.execute("DROP TABLE IF EXISTS vehicle")
     cursor.execute("DROP TABLE IF EXISTS registration")
+    cursor.execute("DROP TABLE IF EXISTS station")
 
     # Replace Nan with None
-    demo_df['station_count'] = demo_df['station_count'].fillna(0)
-    evreg_df['reg_count'] = evreg_df['reg_count'].fillna(0)
     demo_df = demo_df.astype('str')
     demo_df['population'] = demo_df['population'].replace('nan','0')
     demo_df = demo_df.astype({'population':'float'})
     demo_df['income'] = demo_df['income'].replace('nan','0')
-    demo_df['station_count'] = demo_df['station_count'].replace('nan','0')
-    # demo_df['station_count'] = evreg_df['station_count'].fillna(0)
 
     # Set data types
     county_df = county_df.astype({'county_id':'int','county':'str'})
     vehicles_df = vehicles_df.astype({'vehicle_id':'int','make':'str','model':'str'})
     evreg_df = evreg_df.astype({'county_id':'int','year':'int','vehicle_id':'int','reg_count':'int'})
-    demo_df = demo_df.astype({'county_id':'int','year':'int','population':'int','income':'int','station_count':'float'})
+    demo_df = demo_df.astype({'county_id':'int','year':'int','population':'int','income':'int'})
+    stations_df = stations_df.astype({'station_id':'int','county_id':'int','year':'int'})
 
     # Create tables
     county_df.to_sql('county', conn, if_exists='replace', index=False)
     vehicles_df.to_sql('vehicle', conn, if_exists='replace', index=False)
     evreg_df.to_sql('registration', conn, if_exists='replace', index=False)
     demo_df.to_sql('demographic', conn, if_exists='replace', index=False)
+    stations_df.to_sql('station', conn, if_exists='replace', index=False)
 
     # Commit the changes
     conn.commit()
-    print(pd.read_sql('''SELECT c.county, r.*, v.*, d.*
-                        FROM county c
-                        LEFT JOIN registration r ON c.county_id = r.county_id
-                        LEFT JOIN vehicle v ON v.vehicle_id = r.vehicle_id
-                        LEFT JOIN demographic d ON c.county_id = r.county_id
-                        WHERE r.county_id is null or d.county_id is null
-                        ORDER BY c.county_id DESC''', conn))
     print(f'SQLite database created successfully.')
 
+    # Test SQL query
+    print(pd.read_sql('''SELECT y.year, -1 as county_id, "All Counties" as county
+                                , IFNULL(d.population,0) as population
+                                , IFNULL(d.income,0) as income
+                                , IFNULL(station_count,0) as station_count
+                                , IFNULL(cr.county_reg_count,0) as county_reg_count
+                                , IFNULL(v.make,"N/A") as make
+                                , IFNULL(v.model,"N/A") as model
+                                , IFNULL(r.reg_count,0) as reg_count
+                            FROM (SELECT 2018 AS year UNION SELECT 2019 AS year UNION SELECT 2020 AS year) y
+                            LEFT JOIN (SELECT year, SUM(population) AS population, AVG(income) AS income
+                                            FROM demographic
+                                            GROUP BY year
+                                        ) d on y.year = d.year
+                            LEFT JOIN (SELECT year, vehicle_id, SUM(reg_count) as reg_count
+                                            FROM registration
+                                            GROUP BY year, vehicle_id
+                                        ) r on y.year = r.year
+                            LEFT JOIN vehicle v on r.vehicle_id = v.vehicle_id
+                            LEFT JOIN (SELECT year, SUM(reg_count) as county_reg_count
+                                            FROM registration
+                                            GROUP BY year
+                                        ) cr on y.year = cr.year
+                            LEFT JOIN (SELECT year, COUNT(station_id) as station_count
+                                            FROM station
+                                            GROUP BY year
+                                        ) s on y.year = s.year
+                        UNION
+                        SELECT y.year, c.county_id, c.county
+                                , IFNULL(d.population,0) as population
+                                , IFNULL(d.income,0) as income
+                                , IFNULL(station_count,0) as station_count
+                                , IFNULL(cr.county_reg_count,0) as county_reg_count
+                                , IFNULL(v.make,"N/A") as make
+                                , IFNULL(v.model,"N/A") as model
+                                , IFNULL(r.reg_count,0) as reg_count
+                            FROM county c
+                            CROSS JOIN (SELECT 2018 AS year UNION SELECT 2019 AS year UNION SELECT 2020 AS year) y
+                            LEFT JOIN demographic d on c.county_id = d.county_id and y.year = d.year
+                            LEFT JOIN registration r on c.county_id = r.county_id and y.year = r.year
+                            LEFT JOIN vehicle v on r.vehicle_id = v.vehicle_id
+                            LEFT JOIN (SELECT county_id, year, SUM(reg_count) as county_reg_count
+                                            FROM registration
+                                            GROUP BY county_id, year
+                                        ) cr on c.county_id = cr.county_id and y.year = cr.year
+                            LEFT JOIN (SELECT county_id, year, COUNT(station_id) as station_count
+                                            FROM station
+                                            GROUP BY county_id, year
+                                        ) s on c.county_id = s.county_id and y.year = s.year
+                            ORDER BY county_id
+                        ''', conn))
+    print(pd.read_sql('''SELECT s.year, c.county_id, c.county, s.station, s.latitude, s.longitude, s.street_address, s.open_date
+                            FROM station s
+                            LEFT JOIN county c on s.county_id = c.county_id
+                            ORDER BY s.year, c.county_id
+                        ''', conn))
 except Error as e:
     print(e)
 finally:
