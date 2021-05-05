@@ -1,16 +1,39 @@
 let dataLink = "http://127.0.0.1:5000/data"
 let stationLink = "http://127.0.0.1:5000/stations"
 
+
 function init(){
     
     let yearSelect = d3.select("#selYear");
     
     let countySelect = d3.select("#selCounty");
 
+    dropDowns(dataLink, yearSelect, countySelect)
+
     getData(dataLink, stationLink, yearSelect, countySelect)
 
     
 };
+
+function dropDowns(dataLink, yearSelect, countySelect){
+
+    d3.json(dataLink).then(function (data) {
+         // // Get distinct Years from data
+         let years = [... new Set(data.map(d => d.year))];
+         // // Append years to dropdown
+         years.forEach(year => {
+             yearSelect.append("option").attr("value", year).text(year);
+         })
+
+         // // Get distinct Counties from data
+         let counties = [... new Set(data.map(d => d.county))]
+             
+         // // Append counties to dropdown
+         counties.forEach(county => {
+             countySelect.append("option").attr("value", county).text(county);
+         })
+    });
+}
 
 function getData(dataLink, stationLink, yearSelect, countySelect){ 
 
@@ -23,23 +46,7 @@ function getData(dataLink, stationLink, yearSelect, countySelect){
             return response.json();
         }));
         }).then(function (evData) {
-            // Log the data to the console
-            // You would do something with both sets of data here
-
-            // // Get distinct Years from data
-            let years = [... new Set(evData[0].map(d => d.year))];
-            // // Append years to dropdown
-            years.forEach(year => {
-                yearSelect.append("option").attr("value", year).text(year);
-            })
-
-            // // Get distinct Counties from data
-            let counties = [... new Set(evData[0].map(d => d.county))]
-                
-            // // Append counties to dropdown
-            counties.forEach(county => {
-                countySelect.append("option").attr("value", county).text(county);
-            })
+           
 
             // // Establish Year ID and County ID
             yearID = getIDS(yearSelect, countySelect)[0];
@@ -47,16 +54,11 @@ function getData(dataLink, stationLink, yearSelect, countySelect){
 
             filterData(evData, yearID, countyID)
 
-            // yearSelect.on("change", () => eventChanged(evData));
-            // countySelect.on("change", () => eventChanged(evData));
-
-
         }).catch(function (error) {
         // if there's an error, log it
         console.log(error);
     });
-};
-
+}
 
 function filterData(evData, yearID, countyID){
 
@@ -64,7 +66,6 @@ function filterData(evData, yearID, countyID){
     let stationData = evData[1];
 
     // Filter and Sort Metadata
-    console.log(countyData)
     let yearFilter = countyData.filter(d => d["year"] === yearID);
 
     // Establish variabls for charts
@@ -83,14 +84,18 @@ function filterData(evData, yearID, countyID){
 
     barData = barData.filter(d => d["county"] != "All Counties")
 
+    console.log(barData)
+
     // Run initial charts
     barChart(barData)
     pieChart(pieData, countyID, yearID)
-    map(barData, stationData, countyID)
+    
+    countyLayer(barData, countyID)
+    evStations(stationData)
+    // map()
 }
 
 function getIDS(yearSelect, countySelect){
-    console.log("get Ids called")
 
     // Establish Year ID and County ID
     let yearID = yearSelect.property("value");
@@ -111,14 +116,7 @@ function eventChanged(){
     
 }
 
-// function countyChanged(evData){
-//     evData = evData
-//     let yearID = d3.select("#selYear").property("value");
-//     let countyID = d3.select("#selCounty").property("value");
-//     yearID = parseInt(yearID)
-//     filterData(evData, yearID, countyID)
-// }
-    
+
 // function to change Y Axis Scale
 function yScale(barData, chosenYAxis, height) {
     // create scales
@@ -195,7 +193,7 @@ function changeBar(barGroup, newYScale, chosenYAxis, height) {
         .attr("height", d => height - newYScale(d[chosenYAxis]))
 
     return barGroup;
-    }
+}
 
 // Function to create barChart
 function barChart(barData){
@@ -380,7 +378,6 @@ function barChart(barData){
     
 }
 
-
 // Function to create PieChart
 function pieChart(pieData, countyID, yearID){
     // Isolate values and labels for chart
@@ -425,14 +422,41 @@ function pieChart(pieData, countyID, yearID){
 };
     
 
+let streetMap = new L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
+        tileSize: 512,
+        maxZoom: 18,
+        zoomOffset: -1,
+        id: "mapbox/streets-v11",
+        accessToken: API_KEY
+});
+
+let evMap = new L.map("map", {
+    center: [28.0000, -83.7000],
+    zoom: 7,
+    layers: [streetMap]
+});
+
+// Function to add station layer to Map
+function evStations(stationData){
+    let stationGroup = new L.LayerGroup();
+
+    stationData.forEach(station => {
+        let latitude = station.latitude;
+        let longitude = station.longitude;
+
+        L.marker([latitude,longitude])
+        .bindPopup(`<h5> ${station.station}</h5> <hr> Address: ${station.street_address}`).addTo(evMap)
+    
+    });
+};
+
+
 
 //Function to create Map
-function map(barData, stationData, countyID){
-
+function map(){
 
     
-    // Use this link to get the geojson data.
-    let link = "static/data/flo.geojson";
 
     // Adding tile layer
     let streetMap = new L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
@@ -442,7 +466,7 @@ function map(barData, stationData, countyID){
         zoomOffset: -1,
         id: "mapbox/streets-v11",
         accessToken: API_KEY
-    })//.addTo(myMap);
+    })
     let satelliteeMap = new L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
         attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
         tileSize: 512,
@@ -452,15 +476,57 @@ function map(barData, stationData, countyID){
         accessToken: API_KEY
     })
         
-      
+    // let stationGroup = new L.LayerGroup();
+
+    // stationData.forEach(station => {
+    //     let latitude = station.latitude;
+    //     let longitude = station.longitude;
+
+    //     L.marker([latitude,longitude])
+    //     .bindPopup(`<h5> ${station.station}</h5> <hr> Address: ${station.street_address}`).addTo(stationGroup)
+    
+    // });
+    // console.log(stationGroup)
+    stationGroup.addTo(evData)
+    
+    // countyBoundary = countylayer(barData, countyID)
+
+
+    let baseMaps = {
+        Street: streetMap,
+        Satellite: satelliteeMap
+    };
+
+    let overlayMaps = {
+        // "Counties" : countyBoundary,
+        "Stations" : stationGroup
+    };
+
+    // let evMap = new L.map("map", {
+    //     center: [28.0000, -83.7000],
+    //     zoom: 7,
+    //     layers: [streetMap, stationGroup]
+    // });
+
+    L.control.layers(baseMaps, overlayMaps).addTo(evMap);
+
+    // legend.addTo(evMap);
+
+};
+
+
+function countyLayer(barData, countyID){
+
+    // Use this link to get the geojson data.
+    let link = "static/data/flo.geojson";
+
     // Grabbing our GeoJSON data..
     let countyBoundary = new L.LayerGroup();
 
-    // countyBoundary.clearLayers()
 
     d3.json(link).then(function(data) {
         // Creating a geoJSON layer with the retrieved data
-        // console.log(data)
+        console.log(data)
         L.choropleth(data, {
         // Style each feature (in this case a neighborhood)
         
@@ -549,44 +615,18 @@ function map(barData, stationData, countyID){
             return div;
         };
 
+        countyBoundary.remove()
+        countyBoundary.addTo(evMap)
         // Adding legend to the map
+        // legend.remove()
         legend.addTo(evMap);
+        // return countyBoundary
     });
+    // console.log(countyBoundary)
+    // countyBoundary.addTo(evMap)
+}
 
-    let stationGroup = new L.LayerGroup();
-
-    stationData.forEach(station => {
-        let latitude = station.latitude;
-        let longitude = station.longitude;
-
-        L.marker([latitude,longitude])
-        .bindPopup(`<h5> ${station.station}</h5> <hr> Address: ${station.street_address}`).addTo(stationGroup)
-    
-    });
-
-
-    let baseMaps = {
-        Street: streetMap,
-        Satellite: satelliteeMap
-    };
-
-    let overlayMaps = {
-        "Counties" : countyBoundary,
-        "Stations" : stationGroup
-    };
-
-    let evMap = L.map("map", {
-        center: [28.0000, -83.7000],
-        zoom: 7,
-        layers: [streetMap, countyBoundary, stationGroup]
-    });
-
-    L.control.layers(baseMaps, overlayMaps).addTo(evMap);
-
-};
-
-
-d3.select("#selYear").on("change", () => eventChanged());
-d3.select("#selCounty").on("change", () => eventChanged());
+d3.select("#selYear", "#selCounty").on("change", () => eventChanged());
+// d3.select("#selCounty").on("change", () => eventChanged());
 
 init()
