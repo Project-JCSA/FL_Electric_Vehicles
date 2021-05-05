@@ -49,8 +49,9 @@ function getData(dataLink, stationLink, yearSelect, countySelect){
            
 
             // // Establish Year ID and County ID
-            yearID = getIDS(yearSelect, countySelect)[0];
-            countyID = getIDS(yearSelect, countySelect)[1];
+            ids = getIDS(yearSelect, countySelect);
+            yearID = ids[0]
+            countyID = ids[1]
 
             filterData(evData, yearID, countyID)
 
@@ -83,8 +84,6 @@ function filterData(evData, yearID, countyID){
                             });
 
     barData = barData.filter(d => d["county"] != "All Counties")
-
-    console.log(barData)
 
     // Run initial charts
     barChart(barData)
@@ -437,6 +436,8 @@ let evMap = new L.map("map", {
     layers: [streetMap]
 });
 
+
+
 // Function to add station layer to Map
 function evStations(stationData){
     let stationGroup = new L.LayerGroup();
@@ -476,19 +477,6 @@ function map(){
         accessToken: API_KEY
     })
         
-    // let stationGroup = new L.LayerGroup();
-
-    // stationData.forEach(station => {
-    //     let latitude = station.latitude;
-    //     let longitude = station.longitude;
-
-    //     L.marker([latitude,longitude])
-    //     .bindPopup(`<h5> ${station.station}</h5> <hr> Address: ${station.street_address}`).addTo(stationGroup)
-    
-    // });
-    // console.log(stationGroup)
-    stationGroup.addTo(evData)
-    
     // countyBoundary = countylayer(barData, countyID)
 
 
@@ -526,9 +514,13 @@ function countyLayer(barData, countyID){
 
     d3.json(link).then(function(data) {
         // Creating a geoJSON layer with the retrieved data
-        console.log(data)
+       
         L.choropleth(data, {
         // Style each feature (in this case a neighborhood)
+
+        // restyle: function (feature, layer){
+        //     if (barData
+        // }
         
         onEachFeature: function(feature, layer) {
             // Set mouse events to change map styling
@@ -587,7 +579,8 @@ function countyLayer(barData, countyID){
                 layer.bindPopup(`<h4> ${feature.properties.namelsad}</h4> <hr> <p>Population: ${feature.properties.population}</p> 
                                 <p>EV Registration: ${feature.properties.registration}</p>
                                 <p>Income: ${feature.properties.income}</p>`).addTo(countyBoundary);
-            }
+            };
+
         })
 
         // Set up the legend
