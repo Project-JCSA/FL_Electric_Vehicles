@@ -89,10 +89,11 @@ function filterData(evData, yearID, countyID){
     barChart(barData)
     pieChart(pieData, countyID, yearID)
     
-    countyLayer(barData, countyID)
+    countyLayer(barData)
     evStations(stationData)
-    // map()
+    // updateMap(barData)
 }
+
 
 function getIDS(yearSelect, countySelect){
 
@@ -419,113 +420,66 @@ function pieChart(pieData, countyID, yearID){
         
         Plotly.newPlot('pie', data, layout, {displayModeBar: false});
 };
-    
 
-let streetMap = new L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+
+let evMap = L.map("map"). setView([28.0000, -83.7000],7)
+let legend = L.control({ position: "bottomleft" });
+
+L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
         attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
         tileSize: 512,
         maxZoom: 18,
         zoomOffset: -1,
         id: "mapbox/streets-v11",
         accessToken: API_KEY
-});
+}).addTo(evMap);
 
-let evMap = new L.map("map", {
-    center: [28.0000, -83.7000],
-    zoom: 7,
-    layers: [streetMap]
-});
 
+let link = "static/data/flo.geojson";
 
 
 // Function to add station layer to Map
-function evStations(stationData){
-    let stationGroup = new L.LayerGroup();
 
-    stationData.forEach(station => {
-        let latitude = station.latitude;
-        let longitude = station.longitude;
+function countyLayer(barData){
 
-        L.marker([latitude,longitude])
-        .bindPopup(`<h5> ${station.station}</h5> <hr> Address: ${station.street_address}`).addTo(evMap)
-    
-    });
-};
+    // d3.select("#map").html("")
+    evMap.remove();
 
-
-
-//Function to create Map
-function map(){
-
-    
-
-    // Adding tile layer
-    let streetMap = new L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
-        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
-        tileSize: 512,
-        maxZoom: 18,
-        zoomOffset: -1,
-        id: "mapbox/streets-v11",
-        accessToken: API_KEY
-    })
-    let satelliteeMap = new L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
-        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
-        tileSize: 512,
-        maxZoom: 18,
-        zoomOffset: -1,
-        id: "mapbox/satellite-v9",
-        accessToken: API_KEY
-    })
-        
-    // countyBoundary = countylayer(barData, countyID)
-
-
-    let baseMaps = {
-        Street: streetMap,
-        Satellite: satelliteeMap
-    };
-
-    let overlayMaps = {
-        // "Counties" : countyBoundary,
-        "Stations" : stationGroup
-    };
-
-    // let evMap = new L.map("map", {
+    evMap = L.map("map"). setView([28.0000, -83.7000],7)
+    // , {
     //     center: [28.0000, -83.7000],
     //     zoom: 7,
-    //     layers: [streetMap, stationGroup]
     // });
 
-    L.control.layers(baseMaps, overlayMaps).addTo(evMap);
-
-    // legend.addTo(evMap);
-
-};
-
-
-function countyLayer(barData, countyID){
+    // var map = L.map('map').setView([37.8, -96], 4);
+    L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+            attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
+            tileSize: 512,
+            maxZoom: 18,
+            zoomOffset: -1,
+            id: "mapbox/streets-v11",
+            accessToken: API_KEY
+    }).addTo(evMap);
 
     // Use this link to get the geojson data.
     let link = "static/data/flo.geojson";
 
     // Grabbing our GeoJSON data..
-    let countyBoundary = new L.LayerGroup();
+    let countyBoundary = new L.LayerGroup().addTo(evMap);
 
 
     d3.json(link).then(function(data) {
         // Creating a geoJSON layer with the retrieved data
-       
+    //    updateMap(barData, data)
+
         L.choropleth(data, {
         // Style each feature (in this case a neighborhood)
-
-        // restyle: function (feature, layer){
-        //     if (barData
-        // }
         
         onEachFeature: function(feature, layer) {
             // Set mouse events to change map styling
             barData.forEach(d => {
                 if(d["county"] === feature.properties.name){
+                    feature.properties.year = d["year"]
                     feature.properties.population = d["population"]
                     feature.properties.registration = d["registration"]
                     feature.properties.income = d["income"]
@@ -579,12 +533,14 @@ function countyLayer(barData, countyID){
                 layer.bindPopup(`<h4> ${feature.properties.namelsad}</h4> <hr> <p>Population: ${feature.properties.population}</p> 
                                 <p>EV Registration: ${feature.properties.registration}</p>
                                 <p>Income: ${feature.properties.income}</p>`).addTo(countyBoundary);
-            };
+            }
 
         })
 
         // Set up the legend
-        let legend = L.control({ position: "bottomleft" });
+        // legend.remove()
+        // let legend = L.control({ position: "bottomleft" });
+
         legend.onAdd = function() {
             var div = L.DomUtil.create("div", "info legend");
             var limits = geojson.options.limits;
@@ -608,16 +564,35 @@ function countyLayer(barData, countyID){
             return div;
         };
 
-        countyBoundary.remove()
-        countyBoundary.addTo(evMap)
+        // countyBoundary.remove()
+        // countyBoundary.addTo(evMap)
         // Adding legend to the map
-        // legend.remove()
+        legend.remove();
         legend.addTo(evMap);
         // return countyBoundary
     });
     // console.log(countyBoundary)
     // countyBoundary.addTo(evMap)
 }
+
+function evStations(stationData){
+
+    let stationGroup = new L.LayerGroup().addTo(evMap);
+
+    stationGroup.clearLayers();
+    
+    stationData.forEach(station => {
+        let latitude = station.latitude;
+        let longitude = station.longitude;
+
+        L.marker([latitude,longitude])
+        .bindPopup(`<h5> ${station.station}</h5> <hr> Address: ${station.street_address}`).addTo(stationGroup)
+    
+    // stationGroup.addTo(evMap)
+    // stationLayer.addData(stationGroup)
+    });
+
+};
 
 d3.select("#selYear", "#selCounty").on("change", () => eventChanged());
 // d3.select("#selCounty").on("change", () => eventChanged());
