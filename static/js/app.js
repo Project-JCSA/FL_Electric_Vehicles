@@ -195,16 +195,13 @@ function changeBar(barGroup, newYScale, chosenYAxis, height) {
     return barGroup;
 }
 
+
 // Function to create barChart
 function barChart(barData){
-    //  let svgWidth = parseInt(d3.select('bar').style('width'), 10);
-    // parseInt(d3.select('#my_dataviz').style('width'), 10)
-    // let svgHeight = svgWidth / 3.236;
-    // console.log(svgWidth)
+     
     d3.selectAll("svg").remove()
-
-    let svgWidth = 1100;
-    let svgHeight = 400;
+    let svgWidth = parseInt(d3.select('#bar').style('width'));
+    let svgHeight = 400
 
     var margin = {
         top:25,
@@ -217,9 +214,7 @@ function barChart(barData){
     // and shift the latter by left and top margins.
     let svg = d3.select("#bar")
         .append("svg")
-        .attr("width", svgWidth)
-        .attr("height", svgHeight);
-        // .attr("viewBox", `0 0 300 200`);
+        .attr("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
 
     
 
@@ -595,6 +590,5 @@ function evStations(stationData){
 };
 
 d3.select("#selYear", "#selCounty").on("change", () => eventChanged());
-// d3.select("#selCounty").on("change", () => eventChanged());
 
 init()
