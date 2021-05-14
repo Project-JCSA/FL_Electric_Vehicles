@@ -49,11 +49,11 @@ This project looks at the increase in FL EV registrations in 2019-2020 and poten
     * Use JavaScript IfVisible library to change page title when page is idle.
 
 ## Final Analysis
-Our analysis shows that counties with more EV registrations have clusters of EV charging stations. However, there are some counties without charging stations that still have a handful of EV registrations.  
+Our analysis shows that counties with more EV registrations have clusters of EV charging stations. There are some counties without charging stations that still have a handful of EV registrations.  In addition, the map shows EV charging stations along major travel routes of I95 and I75.  
 <img src="./Images/FL_EV_Map_2020.png" width="500">
 
 The most popular EV models registered in Florida, accounting for 60% of the market share, are Tesla's Model 3, Model S, & Model X.  
 <img src="./Images/FL_EV_Models_2020.png" width="250">
 
-Miami-Dade, Broward, & Palm Beach have the most EV Registrations, however, they are also some of the most populus counties. A suggested future enhancment to this project would be to look at the EV Registrations to Population ratio. This would allow for a better comparison accross counties with large population disparities.  
+Miami-Dade, Broward, & Palm Beach have the most EV Registrations, however, they are also some of the most populus counties. A suggested future enhancment to this project would be to look at the EV Registrations to Population ratio. This would allow for a better comparison across counties with large population disparities.  
 <img src="./Images/FL_Population_2020.png">
